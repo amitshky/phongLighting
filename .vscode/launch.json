@@ -1,0 +1,55 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		// Clang
+		{
+			"name": "(Win::Clang) Debug",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"preLaunchTask": "Build-Clang-Debug",
+			"program": "${workspaceFolder}/build/src/phongLighting.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"console": "newExternalWindow"
+		},
+		{
+			"name": "(Win::Clang) Release",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"preLaunchTask": "Build-Clang-Release",
+			"program": "${workspaceFolder}/build/src/phongLighting.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"console": "newExternalWindow"
+		},
+		// MSVC
+		{
+			"name": "(Win::MSVC) Debug",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"preLaunchTask": "Build-MSVC-Debug",
+			"program": "${workspaceFolder}/build/src/Debug/phongLighting.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"console": "newExternalWindow"
+		},
+		{
+			"name": "(Win::MSVC) Release",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"preLaunchTask": "Build-MSVC-Release",
+			"program": "${workspaceFolder}/build/src/Release/phongLighting.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"console": "newExternalWindow"
+		},
+	]
+}

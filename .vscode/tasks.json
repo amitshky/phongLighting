@@ -1,0 +1,83 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		// MSVC
+		{
+			"type": "shell",
+			"label": "Build-MSVC-Debug",
+			"windows": {
+				"command": "scripts/build-msvc-dbg.bat"
+			},
+			"problemMatcher": "$gcc",
+			"dependsOn": [
+				"Config-MSVC-Debug"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "Config-MSVC-Debug",
+			"windows": {
+				"command": "scripts/config-msvc.bat"
+			},
+			"problemMatcher": "$gcc"
+		},
+		{
+			"type": "shell",
+			"label": "Build-MSVC-Release",
+			"windows": {
+				"command": "scripts/build-msvc-rel.bat"
+			},
+			"problemMatcher": "$gcc",
+			"dependsOn": [
+				"Config-MSVC-Release"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "Config-MSVC-Release",
+			"windows": {
+				"command": "scripts/config-msvc.bat"
+			},
+			"problemMatcher": "$gcc"
+		},
+		// Clang
+		{
+			"type": "shell",
+			"label": "Build-Clang-Debug",
+			"windows": {
+				"command": "scripts/build-clang.bat"
+			},
+			"problemMatcher": "$gcc",
+			"dependsOn": [
+				"Config-Clang-Debug"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "Config-Clang-Debug",
+			"windows": {
+				"command": "scripts/config-clang-dbg.bat"
+			},
+			"problemMatcher": "$gcc"
+		},
+		{
+			"type": "shell",
+			"label": "Build-Clang-Release",
+			"windows": {
+				"command": "scripts/build-clang.bat"
+			},
+			"problemMatcher": "$gcc",
+			"dependsOn": [
+				"Config-Clang-Release"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "Config-Clang-Release",
+			"windows": {
+				"command": "scripts/config-clang-rel.bat"
+			},
+			"problemMatcher": "$gcc"
+		},
+	]
+}
