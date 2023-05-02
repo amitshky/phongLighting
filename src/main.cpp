@@ -28,7 +28,9 @@ int main()
 
 
 void OnResizeEvent(int width, int height)
-{}
+{
+	std::cout << "Window resized\n";
+}
 
 void OnMouseEvent(double xpos, double ypos)
 {

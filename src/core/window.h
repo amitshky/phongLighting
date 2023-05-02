@@ -49,8 +49,8 @@ private:
 	struct WindowData
 	{
 		const char* title;
-		uint32_t width = 1280;
-		uint32_t height = 720;
+		uint32_t width;
+		uint32_t height;
 
 		ResizeEventCallbackFn ResizeEventCallback = [](int width, int height) {};
 		MouseEventCallbackFn MouseEventCallback = [](double xpos, double ypos) {};
