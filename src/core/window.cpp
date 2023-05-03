@@ -1,7 +1,7 @@
 #include "window.h"
 
-#include <iostream>
 #include <stdexcept>
+
 
 Window::Window(const WindowProps& props)
 {
@@ -29,6 +29,11 @@ void Window::Init(const WindowProps& props)
 	glfwSetWindowUserPointer(m_Window, reinterpret_cast<void*>(&m_Data));
 
 	// register GLFW event callbacks
+	glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) {
+		auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
+		data->CloseEventCallback();
+	});
+
 	glfwSetFramebufferSizeCallback(m_Window, [](GLFWwindow* window, int width, int height) {
 		auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 		data->ResizeEventCallback(width, height);

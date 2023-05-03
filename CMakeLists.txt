@@ -42,11 +42,13 @@ target_include_directories(
 	"lib/"
 	"lib/glm/"
 	"lib/glfw/include/"
+	"lib/fmt/include/"
 	${Vulkan_INCLUDE_DIR}
 )
 
 target_link_libraries(
 	${PROJECT_NAME}
 	glfw
+	fmt::fmt
 	${Vulkan_LIBRARY}
 )
