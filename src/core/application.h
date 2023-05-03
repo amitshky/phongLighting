@@ -15,15 +15,23 @@ public:
 
 	void Run();
 
+	static inline Application* Create(const char* title) { return new Application{ title }; }
+	static inline Application& GetInstance() { return *s_Instance; }
+
+	inline Window& GetWindow() const { return *m_Window; }
+
 private:
 	void Init();
 
 	void OnCloseEvent();
 	void OnResizeEvent(int width, int height);
-	void OnMouseEvent(double xpos, double ypos);
+	void OnMouseMoveEvent(double xpos, double ypos);
+	void OnMouseButtonEvent(int button, int action, int mods);
+	void OnMouseScrollEvent(double xoffset, double yoffset);
 	void OnKeyEvent(int key, int scancode, int action, int mods);
 
 private:
 	bool m_IsRunning = true;
+	static Application* s_Instance;
 	std::unique_ptr<Window> m_Window;
 };

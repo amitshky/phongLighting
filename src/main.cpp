@@ -4,7 +4,7 @@
 
 int main()
 {
-	Application* app = new Application{ "Phong Lighting" };
+	Application* app = Application::Create("Phong Lighting");
 	app->Run();
 	delete app;
 }
