@@ -16,7 +16,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(MSVC)
-	target_compile_options(${PROJECT_NAME} PUBLIC "/W4")
+	target_compile_options(${PROJECT_NAME} PUBLIC "/W4;/WX;")
 elseif(GNU OR Clang)
 	set(GCC_CLANG_COMPILE_OPTIONS "-wall;-Werror;-wextra;-wpedantic;-wconversion;-wshadow;")
 	set(GCC_CLANG_COMPILE_OPTIONS_DEBUG "-O0;-g;")
@@ -43,12 +43,13 @@ target_include_directories(
 	"lib/glm/"
 	"lib/glfw/include/"
 	"lib/fmt/include/"
+	"lib/spdlog/include/"
 	${Vulkan_INCLUDE_DIR}
 )
 
 target_link_libraries(
 	${PROJECT_NAME}
 	glfw
-	fmt::fmt
+	spdlog::spdlog
 	${Vulkan_LIBRARY}
 )

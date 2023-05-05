@@ -1,6 +1,4 @@
-#include "application.h"
-
-#include <fmt/core.h>
+#include "core/application.h"
 
 #include "core/core.h"
 #include "core/input.h"
@@ -11,21 +9,39 @@
 Application* Application::s_Instance = nullptr;
 
 Application::Application(const char* title, uint32_t width, uint32_t height)
-	: m_Window{ std::make_unique<Window>(WindowProps{ title }) }
 {
-	Init();
+	Init(title);
 }
 
-void Application::Init()
+void Application::Init(const char* title)
 {
 	s_Instance = this;
 
+	m_Window = std::make_shared<Window>(WindowProps{ title });
+	// set window event callbacks
 	m_Window->SetCloseEventCallbackFn(BIND_EVENT_FN(Application::OnCloseEvent));
-	m_Window->SetResizeEventCallbackFn(BIND_EVENT_FN(Application::OnResizeEvent));
-	m_Window->SetMouseEventCallbackFn(BIND_EVENT_FN(Application::OnMouseMoveEvent));
-	m_Window->SetMouseButtonCallbackFn(BIND_EVENT_FN(Application::OnMouseButtonEvent));
-	m_Window->SetMouseScrollCallbackFn(BIND_EVENT_FN(Application::OnMouseScrollEvent));
+	m_Window->SetResizeEventCallbackFn(
+		BIND_EVENT_FN(Application::OnResizeEvent));
+	m_Window->SetMouseEventCallbackFn(
+		BIND_EVENT_FN(Application::OnMouseMoveEvent));
+	m_Window->SetMouseButtonCallbackFn(
+		BIND_EVENT_FN(Application::OnMouseButtonEvent));
+	m_Window->SetMouseScrollCallbackFn(
+		BIND_EVENT_FN(Application::OnMouseScrollEvent));
 	m_Window->SetKeyEventCallbackFn(BIND_EVENT_FN(Application::OnKeyEvent));
+
+	const VulkanConfig config{
+#ifdef NDEBUG // release mode
+		false, // validation layers disabled
+#else
+		true, // validation layers enabled
+#endif
+		2, // max frames in flight
+		{ "VK_LAYER_KHRONOS_validation" }, // validation layers
+		{ VK_KHR_SWAPCHAIN_EXTENSION_NAME } // device extensions
+	};
+
+	m_Renderer = std::make_unique<Renderer>(title, config, m_Window);
 }
 
 void Application::Run()
@@ -42,25 +58,16 @@ void Application::OnCloseEvent()
 }
 
 void Application::OnResizeEvent(int width, int height)
-{
-	fmt::print("Width: {}, Height: {}\n", width, height);
-}
+{}
 
 void Application::OnMouseMoveEvent(double xpos, double ypos)
-{
-	fmt::print("MouseX: {}, MouseY: {}\n", xpos, ypos);
-}
+{}
 
 void Application::OnMouseButtonEvent(int button, int action, int mods)
-{
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_1))
-		fmt::print("Left mouse button pressed\n");
-}
+{}
 
 void Application::OnMouseScrollEvent(double xoffset, double yoffset)
-{
-	fmt::print("ScrollX: {}, ScrollY: {}\n", xoffset, yoffset);
-}
+{}
 
 void Application::OnKeyEvent(int key, int scancode, int action, int mods)
 {

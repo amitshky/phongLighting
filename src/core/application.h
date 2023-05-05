@@ -1,27 +1,32 @@
 #pragma once
 
 #include <memory>
-
 #include "core/window.h"
+#include "renderer/renderer.h"
 
 
 class Application
 {
 public:
-	Application(const char* title, uint32_t width = 1280, uint32_t height = 720);
+	explicit Application(const char* title,
+		uint32_t width = 1280,
+		uint32_t height = 720);
 
 	Application(const Application&) = delete;
 	Application& operator=(const Application&) = delete;
 
 	void Run();
 
-	static inline Application* Create(const char* title) { return new Application{ title }; }
+	static inline Application* Create(const char* title)
+	{
+		return new Application{ title };
+	}
 	static inline Application& GetInstance() { return *s_Instance; }
 
 	inline Window& GetWindow() const { return *m_Window; }
 
 private:
-	void Init();
+	void Init(const char* title);
 
 	void OnCloseEvent();
 	void OnResizeEvent(int width, int height);
@@ -33,5 +38,6 @@ private:
 private:
 	bool m_IsRunning = true;
 	static Application* s_Instance;
-	std::unique_ptr<Window> m_Window;
+	std::shared_ptr<Window> m_Window;
+	std::unique_ptr<Renderer> m_Renderer;
 };
