@@ -24,16 +24,18 @@ struct SwapchainSupportDetails
 class Device
 {
 public:
+	Device(const Device&) = delete;
+	Device& operator=(const Device&) = delete;
 	~Device();
 
 	static Device* Create(const VulkanConfig& config, VkSurfaceKHR windowSurface);
 
-	static inline VkDevice GetDevice() { return s_Device->m_DeviceVk; }
-	static inline VkPhysicalDevice GetPhysicalDevice() { return s_Device->m_PhysicalDevice; }
+	static inline VkDevice GetDevice() { return s_Instance->m_DeviceVk; }
+	static inline VkPhysicalDevice GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
 
-	static inline VkQueue GetGraphicsQueue() { return s_Device->m_GraphicsQueue; }
-	static inline VkQueue GetPresentQueue() { return s_Device->m_GraphicsQueue; }
-	static inline VkSampleCountFlagBits GetMSAASamplesCount() { return s_Device->m_MsaaSamples; }
+	static inline VkQueue GetGraphicsQueue() { return s_Instance->m_GraphicsQueue; }
+	static inline VkQueue GetPresentQueue() { return s_Instance->m_PresentQueue; }
+	static inline VkSampleCountFlagBits GetMSAASamplesCount() { return s_Instance->m_MsaaSamples; }
 
 	// device details functions
 	static uint32_t
@@ -57,7 +59,7 @@ private:
 	VkInstance m_VulkanInstance;
 	VkSurfaceKHR m_WindowSurface;
 
-	static Device* s_Device;
+	static Device* s_Instance;
 
 	VkPhysicalDevice m_PhysicalDevice;
 	VkDevice m_DeviceVk;

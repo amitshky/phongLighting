@@ -5,14 +5,14 @@
 #include "renderer/vulkanContext.h"
 
 
-Device* Device::s_Device = nullptr;
+Device* Device::s_Instance = nullptr;
 
 Device::Device(const VulkanConfig& config, VkSurfaceKHR windowSurface)
 	: m_Config{ config },
 	  m_WindowSurface{ windowSurface },
 	  m_PhysicalDevice{ VK_NULL_HANDLE }
 {
-	s_Device = this;
+	s_Instance = this;
 	PickPhysicalDevice();
 	CreateLogicalDevice();
 }
@@ -24,10 +24,10 @@ Device::~Device()
 
 Device* Device::Create(const VulkanConfig& config, VkSurfaceKHR windowSurface)
 {
-	if (s_Device == nullptr)
+	if (s_Instance == nullptr)
 		return new Device{ config, windowSurface };
 
-	return s_Device;
+	return s_Instance;
 }
 
 void Device::PickPhysicalDevice()

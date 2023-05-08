@@ -4,13 +4,13 @@
 #include "core/core.h"
 
 
-VulkanContext* VulkanContext::s_VulkanContext = nullptr;
+VulkanContext* VulkanContext::s_Instance = nullptr;
 
 VulkanContext::VulkanContext(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window)
 	: m_Config{ config },
 	  m_Window{ window }
 {
-	s_VulkanContext = this;
+	s_Instance = this;
 	CreateInstance(title);
 	SetupDebugMessenger();
 	m_Window->CreateWindowSurface(m_VulkanInstance);
@@ -29,10 +29,10 @@ VulkanContext::~VulkanContext()
 VulkanContext*
 	VulkanContext::Create(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window)
 {
-	if (s_VulkanContext == nullptr)
+	if (s_Instance == nullptr)
 		return new VulkanContext{ title, config, window };
 
-	return s_VulkanContext;
+	return s_Instance;
 }
 
 void VulkanContext::CreateInstance(const char* title)

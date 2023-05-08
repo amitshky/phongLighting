@@ -29,11 +29,13 @@ public:
 class VulkanContext
 {
 public:
+	VulkanContext(const VulkanContext&) = delete;
+	VulkanContext& operator=(const VulkanContext&) = delete;
 	~VulkanContext();
 
 	static VulkanContext* Create(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
-	static inline VkInstance GetInstance() { return s_VulkanContext->m_VulkanInstance; }
-	static inline VkSurfaceKHR GetWindowSurface() { return s_VulkanContext->m_Window->GetWindowSurface(); }
+	static inline VkInstance GetInstance() { return s_Instance->m_VulkanInstance; }
+	static inline VkSurfaceKHR GetWindowSurface() { return s_Instance->m_Window->GetWindowSurface(); }
 
 private:
 	VulkanContext(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
@@ -64,7 +66,7 @@ private:
 	const VulkanConfig m_Config;
 	std::shared_ptr<Window> m_Window;
 
-	static VulkanContext* s_VulkanContext;
+	static VulkanContext* s_Instance;
 	VkInstance m_VulkanInstance;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
 };
