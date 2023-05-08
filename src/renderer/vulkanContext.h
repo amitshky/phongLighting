@@ -29,29 +29,24 @@ public:
 class VulkanContext
 {
 public:
-	VulkanContext(const char* title,
-		const VulkanConfig& config,
-		const std::shared_ptr<Window>& window);
 	~VulkanContext();
 
-	inline VkInstance GetInstance() const { return m_VulkanInstance; }
-	inline VkSurfaceKHR GetWindowSurface() const
-	{
-		return m_Window->GetWindowSurface();
-	}
+	static VulkanContext* Create(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
+	static inline VkInstance GetInstance() { return s_VulkanContext->m_VulkanInstance; }
+	static inline VkSurfaceKHR GetWindowSurface() { return s_VulkanContext->m_Window->GetWindowSurface(); }
 
 private:
+	VulkanContext(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
+
 	void CreateInstance(const char* title);
 	std::vector<const char*> GetRequiredExtensions();
 
 	void SetupDebugMessenger();
 	bool CheckValidationLayerSupport();
-	void PopulateDebugMessengerCreateInfo(
-		VkDebugUtilsMessengerCreateInfoEXT& debugMessengerInfo);
+	void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugMessengerInfo);
 
 	// `VKAPI_ATTR` and `VKAPI_CALL` ensures the right signature for Vulkan
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbakck,
 		void* pUserData);
@@ -69,6 +64,7 @@ private:
 	const VulkanConfig m_Config;
 	std::shared_ptr<Window> m_Window;
 
+	static VulkanContext* s_VulkanContext;
 	VkInstance m_VulkanInstance;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
 };

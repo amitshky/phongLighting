@@ -1,31 +1,49 @@
 #pragma once
 
+#include <optional>
 #include "renderer/vulkanContext.h"
 
+
+struct QueueFamilyIndices
+{
+	// std::optional contains no value until you assign something to it
+	// we can check if it contains a value by calling has_value()
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+
+	inline bool IsComplete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
+};
+
+struct SwapchainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> presentModes;
+};
 
 class Device
 {
 public:
-	Device(const VulkanConfig& config,
-		VkInstance vulkanInstance,
-		VkSurfaceKHR windowSurface);
 	~Device();
 
-	inline VkDevice GetDevice() const { return m_DeviceVk; }
-	inline VkPhysicalDevice GetPhysicalDevice() const
-	{
-		return m_PhysicalDevice;
-	}
+	static Device* Create(const VulkanConfig& config, VkSurfaceKHR windowSurface);
 
-	inline VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
-	inline VkQueue GetPresentQueue() const { return m_GraphicsQueue; }
+	static inline VkDevice GetDevice() { return s_Device->m_DeviceVk; }
+	static inline VkPhysicalDevice GetPhysicalDevice() { return s_Device->m_PhysicalDevice; }
 
-	inline VkSampleCountFlagBits GetMSAASamplesCount() const
-	{
-		return m_MsaaSamples;
-	}
+	static inline VkQueue GetGraphicsQueue() { return s_Device->m_GraphicsQueue; }
+	static inline VkQueue GetPresentQueue() { return s_Device->m_GraphicsQueue; }
+	static inline VkSampleCountFlagBits GetMSAASamplesCount() { return s_Device->m_MsaaSamples; }
+
+	// device details functions
+	static uint32_t
+		FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	static SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface);
+	static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface);
 
 private:
+	Device(const VulkanConfig& config, VkSurfaceKHR windowSurface);
+
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
 
@@ -38,6 +56,8 @@ private:
 	const VulkanConfig m_Config;
 	VkInstance m_VulkanInstance;
 	VkSurfaceKHR m_WindowSurface;
+
+	static Device* s_Device;
 
 	VkPhysicalDevice m_PhysicalDevice;
 	VkDevice m_DeviceVk;

@@ -8,7 +8,7 @@
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application(const char* title, uint32_t width, uint32_t height)
+Application::Application(const char* title, uint32_t, uint32_t)
 {
 	Init(title);
 }
@@ -20,14 +20,10 @@ void Application::Init(const char* title)
 	m_Window = std::make_shared<Window>(WindowProps{ title });
 	// set window event callbacks
 	m_Window->SetCloseEventCallbackFn(BIND_EVENT_FN(Application::OnCloseEvent));
-	m_Window->SetResizeEventCallbackFn(
-		BIND_EVENT_FN(Application::OnResizeEvent));
-	m_Window->SetMouseEventCallbackFn(
-		BIND_EVENT_FN(Application::OnMouseMoveEvent));
-	m_Window->SetMouseButtonCallbackFn(
-		BIND_EVENT_FN(Application::OnMouseButtonEvent));
-	m_Window->SetMouseScrollCallbackFn(
-		BIND_EVENT_FN(Application::OnMouseScrollEvent));
+	m_Window->SetResizeEventCallbackFn(BIND_EVENT_FN(Application::OnResizeEvent));
+	m_Window->SetMouseEventCallbackFn(BIND_EVENT_FN(Application::OnMouseMoveEvent));
+	m_Window->SetMouseButtonCallbackFn(BIND_EVENT_FN(Application::OnMouseButtonEvent));
+	m_Window->SetMouseScrollCallbackFn(BIND_EVENT_FN(Application::OnMouseScrollEvent));
 	m_Window->SetKeyEventCallbackFn(BIND_EVENT_FN(Application::OnKeyEvent));
 
 	const VulkanConfig config{
@@ -44,6 +40,14 @@ void Application::Init(const char* title)
 	m_Renderer = std::make_unique<Renderer>(title, config, m_Window);
 }
 
+Application* Application::Create(const char* title)
+{
+	if (Application::s_Instance == nullptr)
+		return new Application{ title };
+
+	return Application::s_Instance;
+}
+
 void Application::Run()
 {
 	while (m_IsRunning)
@@ -57,19 +61,19 @@ void Application::OnCloseEvent()
 	m_IsRunning = false;
 }
 
-void Application::OnResizeEvent(int width, int height)
+void Application::OnResizeEvent(int, int)
 {}
 
-void Application::OnMouseMoveEvent(double xpos, double ypos)
+void Application::OnMouseMoveEvent(double, double)
 {}
 
-void Application::OnMouseButtonEvent(int button, int action, int mods)
+void Application::OnMouseButtonEvent(int, int, int)
 {}
 
-void Application::OnMouseScrollEvent(double xoffset, double yoffset)
+void Application::OnMouseScrollEvent(double, double)
 {}
 
-void Application::OnKeyEvent(int key, int scancode, int action, int mods)
+void Application::OnKeyEvent(int, int, int, int)
 {
 	if (Input::IsKeyPressed(KEY_ESCAPE))
 		m_IsRunning = false;

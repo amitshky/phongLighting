@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <vulkan/vulkan.h>
-#include "core/core.h"
+#include <GLFW/glfw3.h>
 
 
 struct WindowProps
@@ -13,9 +13,7 @@ public:
 	uint32_t height;
 
 public:
-	explicit WindowProps(const char* title,
-		uint32_t width = 1280,
-		uint32_t height = 720)
+	explicit WindowProps(const char* title, uint32_t width = 1280, uint32_t height = 720)
 		: title{ title },
 		  width{ width },
 		  height{ height }
@@ -28,12 +26,9 @@ public:
 	using CloseEventCallbackFn = std::function<void()>;
 	using ResizeEventCallbackFn = std::function<void(int width, int height)>;
 	using MouseEventCallbackFn = std::function<void(double xpos, double ypos)>;
-	using MouseButtonCallbackFn =
-		std::function<void(int button, int action, int mods)>;
-	using MouseScrollCallbackFn =
-		std::function<void(double xoffset, double yoffset)>;
-	using KeyEventCallbackFn =
-		std::function<void(int key, int scancode, int action, int mods)>;
+	using MouseButtonCallbackFn = std::function<void(int button, int action, int mods)>;
+	using MouseScrollCallbackFn = std::function<void(double xoffset, double yoffset)>;
+	using KeyEventCallbackFn = std::function<void(int key, int scancode, int action, int mods)>;
 
 public:
 	explicit Window(const WindowProps& props);
@@ -46,26 +41,25 @@ public:
 	inline uint32_t GetWidth() const { return m_Data.width; }
 	inline uint32_t GetHeight() const { return m_Data.height; }
 
-	inline GLFWwindow* GetWindowContext() const { return m_Window; }
+	inline GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
 	inline VkSurfaceKHR GetWindowSurface() const { return m_WindowSurface; }
+	inline void GetFramebufferSize(int* width, int* height) const
+	{
+		glfwGetFramebufferSize(m_WindowHandle, width, height);
+	}
 	static inline const char** GetRequiredVulkanExtensions(uint32_t* count)
 	{
 		return glfwGetRequiredInstanceExtensions(count);
 	}
 
-	inline void SetCloseEventCallbackFn(const CloseEventCallbackFn& callback)
-	{
-		m_Data.CloseEventCallback = callback;
-	}
+	// set event callbacks
+	inline void SetCloseEventCallbackFn(const CloseEventCallbackFn& callback) { m_Data.CloseEventCallback = callback; }
 	inline void SetResizeEventCallbackFn(const ResizeEventCallbackFn& callback)
 	{
 		m_Data.ResizeEventCallback = callback;
 	}
 
-	inline void SetMouseEventCallbackFn(const MouseEventCallbackFn& callback)
-	{
-		m_Data.MouseEventCallback = callback;
-	}
+	inline void SetMouseEventCallbackFn(const MouseEventCallbackFn& callback) { m_Data.MouseEventCallback = callback; }
 	inline void SetMouseButtonCallbackFn(const MouseButtonCallbackFn& callback)
 	{
 		m_Data.MouseButtonCallback = callback;
@@ -75,10 +69,7 @@ public:
 		m_Data.MouseScrollCallback = callback;
 	}
 
-	inline void SetKeyEventCallbackFn(const KeyEventCallbackFn& callback)
-	{
-		m_Data.KeyEventCallback = callback;
-	}
+	inline void SetKeyEventCallbackFn(const KeyEventCallbackFn& callback) { m_Data.KeyEventCallback = callback; }
 
 private:
 	void Init(const WindowProps& props);
@@ -92,22 +83,17 @@ private:
 
 		// event callback functions
 		CloseEventCallbackFn CloseEventCallback = []() {};
-		ResizeEventCallbackFn ResizeEventCallback = [](int width, int height) {
-		};
+		ResizeEventCallbackFn ResizeEventCallback = [](int, int) {};
 
-		MouseEventCallbackFn MouseEventCallback = [](double xpos, double ypos) {
-		};
-		MouseButtonCallbackFn MouseButtonCallback =
-			[](int button, int action, int mods) {};
-		MouseScrollCallbackFn MouseScrollCallback = [](double xoffset,
-														double yoffset) {};
+		MouseEventCallbackFn MouseEventCallback = [](double, double) {};
+		MouseButtonCallbackFn MouseButtonCallback = [](int, int, int) {};
+		MouseScrollCallbackFn MouseScrollCallback = [](double, double) {};
 
-		KeyEventCallbackFn KeyEventCallback =
-			[](int key, int scancode, int action, int mods) {};
+		KeyEventCallbackFn KeyEventCallback = [](int, int, int, int) {};
 	};
 
 	WindowData m_Data;
-	GLFWwindow* m_Window;
+	GLFWwindow* m_WindowHandle;
 
 	VkSurfaceKHR m_WindowSurface;
 };

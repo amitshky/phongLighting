@@ -8,24 +8,18 @@
 class Application
 {
 public:
-	explicit Application(const char* title,
-		uint32_t width = 1280,
-		uint32_t height = 720);
-
 	Application(const Application&) = delete;
 	Application& operator=(const Application&) = delete;
 
+	static Application* Create(const char* title);
 	void Run();
 
-	static inline Application* Create(const char* title)
-	{
-		return new Application{ title };
-	}
 	static inline Application& GetInstance() { return *s_Instance; }
-
 	inline Window& GetWindow() const { return *m_Window; }
 
 private:
+	explicit Application(const char* title, uint32_t width = 1280, uint32_t height = 720);
+
 	void Init(const char* title);
 
 	void OnCloseEvent();

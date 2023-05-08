@@ -1,5 +1,4 @@
 #include "core/core.h"
-#include "core/logger.h"
 #include "core/application.h"
 
 int main()

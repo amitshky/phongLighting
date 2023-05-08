@@ -11,14 +11,19 @@ add_subdirectory(src)
 add_subdirectory(lib)
 
 
+set(CMAKE_CXX_CLANG_TIDY
+    clang-tidy;
+    -header-filter=.;
+    -checks=*;)
+
 if(UNIX AND NOT APPLE)
 	set(LINUX TRUE)
 endif()
 
 if(MSVC)
-	target_compile_options(${PROJECT_NAME} PUBLIC "/W4;/WX;")
+	target_compile_options(${PROJECT_NAME} PUBLIC "/W4;/WX;/analyze;/MP;")
 elseif(GNU OR Clang)
-	set(GCC_CLANG_COMPILE_OPTIONS "-wall;-Werror;-wextra;-wpedantic;-wconversion;-wshadow;")
+	set(GCC_CLANG_COMPILE_OPTIONS "-Wall;-Werror;-Wextra;-Wpedantic;-Wconversion;-Wshadow;")
 	set(GCC_CLANG_COMPILE_OPTIONS_DEBUG "-O0;-g;")
 	set(GCC_CLANG_COMPILE_OPTIONS_RELEASE "-O3;")
 
