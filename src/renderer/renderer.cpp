@@ -9,13 +9,17 @@
 
 
 Renderer::Renderer(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window)
-	: m_Window{ window }
+	: m_Config{ config },
+	  m_Window{ window }
 {
 	Init(title, config);
 }
 
 Renderer::~Renderer()
 {
+	// command buffers are automatically destroyed
+	vkDestroyCommandPool(Device::GetDevice(), m_CommandPool, nullptr);
+
 	vkDestroyPipeline(Device::GetDevice(), m_Pipeline, nullptr);
 	vkDestroyPipelineLayout(Device::GetDevice(), m_PipelineLayout, nullptr);
 
@@ -38,7 +42,12 @@ void Renderer::Init(const char* title, const VulkanConfig& config)
 	CreateDepthResource();
 	CreateFramebuffers();
 	CreateGraphicsPipeline();
+	CreateCommandPool();
+	CreateCommandBuffers();
 }
+
+void Renderer::Draw()
+{}
 
 void Renderer::CreateSwapchain()
 {
@@ -450,4 +459,82 @@ void Renderer::CreateGraphicsPipeline()
 	THROW(vkCreateGraphicsPipelines(Device::GetDevice(), VK_NULL_HANDLE, 1, &graphicsPipelineInfo, nullptr, &m_Pipeline)
 			  != VK_SUCCESS,
 		"Failed to create graphics pipeline!");
+}
+
+void Renderer::CreateCommandPool()
+{
+	QueueFamilyIndices queueIndices =
+		Device::FindQueueFamilies(Device::GetPhysicalDevice(), VulkanContext::GetWindowSurface());
+
+	VkCommandPoolCreateInfo commandPoolInfo{};
+	commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	commandPoolInfo.queueFamilyIndex = queueIndices.graphicsFamily.value();
+
+	THROW(vkCreateCommandPool(Device::GetDevice(), &commandPoolInfo, nullptr, &m_CommandPool) != VK_SUCCESS,
+		"Failed to create command pool!")
+}
+
+void Renderer::CreateCommandBuffers()
+{
+	m_CommandBuffers.resize(m_Config.maxFramesInFlight);
+
+	VkCommandBufferAllocateInfo cmdBuffAllocInfo{};
+	cmdBuffAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdBuffAllocInfo.commandPool = m_CommandPool;
+	cmdBuffAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	cmdBuffAllocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+
+	THROW(vkAllocateCommandBuffers(Device::GetDevice(), &cmdBuffAllocInfo, m_CommandBuffers.data()) != VK_SUCCESS,
+		"Failed to allocate command buffers!")
+}
+
+void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+	VkCommandBufferBeginInfo cmdBuffBeginInfo{};
+	cmdBuffBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	THROW(vkBeginCommandBuffer(commandBuffer, &cmdBuffBeginInfo) != VK_SUCCESS,
+		"Failed to begin recording command buffer!")
+
+	// clear values for each attachment
+	std::array<VkClearValue, 3> clearValues;
+	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	clearValues[1].depthStencil = { 1.0f, 0 };
+	clearValues[2].color = clearValues[0].color;
+
+	// start a render pass
+	VkRenderPassBeginInfo renderPassBeginInfo{};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = m_RenderPass;
+	renderPassBeginInfo.framebuffer = m_SwapchainFramebuffers[imageIndex];
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = m_SwapchainExtent;
+	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+	renderPassBeginInfo.pClearValues = clearValues.data();
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(m_SwapchainExtent.width);
+	viewport.height = static_cast<float>(m_SwapchainExtent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = m_SwapchainExtent;
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	// TODO: incomplete
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	THROW(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS, "Failed to record command buffer!");
 }

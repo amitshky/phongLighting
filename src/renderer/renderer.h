@@ -13,6 +13,8 @@ public:
 	Renderer(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
 	~Renderer();
 
+	void Draw();
+
 private:
 	void Init(const char* title, const VulkanConfig& config);
 
@@ -35,7 +37,13 @@ private:
 	// pipeline
 	void CreateGraphicsPipeline();
 
+	// command buffer
+	void CreateCommandPool();
+	void CreateCommandBuffers();
+	void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
 private:
+	const VulkanConfig m_Config;
 	std::shared_ptr<Window> m_Window;
 
 	VulkanContext* m_VulkanContext;
@@ -63,4 +71,8 @@ private:
 	// pipeline
 	VkPipelineLayout m_PipelineLayout;
 	VkPipeline m_Pipeline;
+
+	// command buffer
+	VkCommandPool m_CommandPool;
+	std::vector<VkCommandBuffer> m_CommandBuffers;
 };

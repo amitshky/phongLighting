@@ -9,14 +9,14 @@ struct VulkanConfig
 {
 public:
 	bool enableValidationLayers;
-	int maxFramesInFlight;
+	uint32_t maxFramesInFlight;
 
 	std::vector<const char*> validationLayers;
 	std::vector<const char*> deviceExtensions;
 
 public:
 	VulkanConfig(bool enableValidationLayers,
-		int maxFramesInFlight,
+		uint32_t maxFramesInFlight,
 		const std::vector<const char*>& validationLayers,
 		const std::vector<const char*>& deviceExtensions)
 		: enableValidationLayers{ enableValidationLayers },

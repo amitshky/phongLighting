@@ -52,6 +52,7 @@ void Application::Run()
 {
 	while (m_IsRunning)
 	{
+		m_Renderer->Draw();
 		m_Window->OnUpdate();
 	}
 }
