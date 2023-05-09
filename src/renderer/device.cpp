@@ -267,3 +267,21 @@ QueueFamilyIndices Device::FindQueueFamilies(VkPhysicalDevice physicalDevice, Vk
 
 	return indices;
 }
+
+VkFormat Device::FindSupportedFormat(const std::vector<VkFormat>& canditateFormats,
+	VkImageTiling tiling,
+	VkFormatFeatureFlags features)
+{
+	for (auto format : canditateFormats)
+	{
+		VkFormatProperties prop;
+		vkGetPhysicalDeviceFormatProperties(s_Instance->GetPhysicalDevice(), format, &prop);
+
+		if (tiling == VK_IMAGE_TILING_LINEAR && (prop.linearTilingFeatures & features) == features)
+			return format;
+		else if (tiling == VK_IMAGE_TILING_OPTIMAL && (prop.optimalTilingFeatures & features) == features)
+			return format;
+	}
+
+	THROW(true, "Failed to find supported format!");
+}

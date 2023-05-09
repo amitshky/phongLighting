@@ -42,6 +42,9 @@ public:
 		FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	static SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface);
 	static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface);
+	static VkFormat FindSupportedFormat(const std::vector<VkFormat>& canditateFormats,
+		VkImageTiling tiling,
+		VkFormatFeatureFlags features);
 
 private:
 	Device(const VulkanConfig& config, VkSurfaceKHR windowSurface);

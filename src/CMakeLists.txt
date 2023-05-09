@@ -11,6 +11,7 @@ add_executable(
 	renderer/renderer.cpp
 	renderer/vulkanContext.cpp
 	renderer/device.cpp
+	renderer/shader.cpp
 
 	utils/utils.cpp
 )

@@ -24,6 +24,17 @@ private:
 	void CreateSwapchainImageViews();
 	void CleanupSwapchain();
 
+	// render pass
+	void CreateRenderPass();
+	VkFormat FindDepthFormat();
+	// framebuffer
+	void CreateColorResource();
+	void CreateDepthResource();
+	void CreateFramebuffers();
+
+	// pipeline
+	void CreateGraphicsPipeline();
+
 private:
 	std::shared_ptr<Window> m_Window;
 
@@ -36,4 +47,20 @@ private:
 	VkFormat m_SwapchainImageFormat;
 	VkExtent2D m_SwapchainExtent;
 	std::vector<VkImageView> m_SwapchainImageViews;
+
+	// render pass
+	VkRenderPass m_RenderPass;
+
+	// framebuffer
+	VkImage m_ColorImage;
+	VkDeviceMemory m_ColorImageMemory;
+	VkImageView m_ColorImageView;
+	VkImage m_DepthImage;
+	VkDeviceMemory m_DepthImageMemory;
+	VkImageView m_DepthImageView;
+	std::vector<VkFramebuffer> m_SwapchainFramebuffers;
+
+	// pipeline
+	VkPipelineLayout m_PipelineLayout;
+	VkPipeline m_Pipeline;
 };

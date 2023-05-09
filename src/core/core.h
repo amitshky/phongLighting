@@ -11,9 +11,9 @@
 #define BIND_EVENT_FN(fn) \
 	[this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
-#define THROW(condition, msg)          \
-	if (condition)                     \
-	{                                  \
-		Logger::Error(msg);            \
-		throw std::runtime_error(msg); \
+#define THROW(condition, ...)                               \
+	if (condition)                                          \
+	{                                                       \
+		Logger::Error(__VA_ARGS__);                         \
+		throw std::runtime_error(fmt::format(__VA_ARGS__)); \
 	}
