@@ -8,26 +8,16 @@
 #include "utils/utils.h"
 
 
-Renderer::Renderer(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window)
+Renderer::Renderer(const char* title, const VulkanConfig& config, std::shared_ptr<Window> window)
 	: m_Config{ config },
-	  m_Window{ window }
+	  m_Window{ std::move(window) }
 {
 	Init(title, config);
 }
 
 Renderer::~Renderer()
 {
-	// command buffers are automatically destroyed
-	vkDestroyCommandPool(Device::GetDevice(), m_CommandPool, nullptr);
-
-	vkDestroyPipeline(Device::GetDevice(), m_Pipeline, nullptr);
-	vkDestroyPipelineLayout(Device::GetDevice(), m_PipelineLayout, nullptr);
-
-	CleanupSwapchain();
-	vkDestroyRenderPass(Device::GetDevice(), m_RenderPass, nullptr);
-
-	delete m_Device;
-	delete m_VulkanContext;
+	Terminate();
 }
 
 void Renderer::Init(const char* title, const VulkanConfig& config)
@@ -44,10 +34,109 @@ void Renderer::Init(const char* title, const VulkanConfig& config)
 	CreateGraphicsPipeline();
 	CreateCommandPool();
 	CreateCommandBuffers();
+	CreateSyncObjects();
+}
+
+void Renderer::Terminate()
+{
+	Device::WaitIdle();
+
+	for (size_t i = 0; i < m_Config.maxFramesInFlight; ++i)
+	{
+		vkDestroySemaphore(Device::GetDevice(), m_ImageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(Device::GetDevice(), m_RenderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(Device::GetDevice(), m_InFlightFences[i], nullptr);
+	}
+
+	// command buffers are automatically destroyed
+	vkDestroyCommandPool(Device::GetDevice(), m_CommandPool, nullptr);
+
+	vkDestroyPipeline(Device::GetDevice(), m_Pipeline, nullptr);
+	vkDestroyPipelineLayout(Device::GetDevice(), m_PipelineLayout, nullptr);
+
+	CleanupSwapchain();
+	vkDestroyRenderPass(Device::GetDevice(), m_RenderPass, nullptr);
+
+	delete m_Device;
+	delete m_VulkanContext;
 }
 
 void Renderer::Draw()
-{}
+{
+	// wait for previous frame to signal the fence
+	vkWaitForFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
+
+	// acquire image from the swapchain
+	// signals the semaphore
+	uint32_t nextImageIndex = 0;
+	VkResult result = vkAcquireNextImageKHR(Device::GetDevice(),
+		m_Swapchain,
+		UINT64_MAX,
+		m_ImageAvailableSemaphores[m_CurrentFrameIndex],
+		VK_NULL_HANDLE,
+		&nextImageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		// we cannot simply return here, because the queue is never
+		// submitted and thus the fences are never signaled , causing a
+		// deadlock; to solve this we delay resetting the fences until
+		// after we check the swapchain
+		RecreateSwapchain();
+		return;
+	}
+
+	THROW(result != VK_SUCCESS, "Failed to acquire swapchain image!")
+
+	// resetting the fence has been set after the result has been checked to
+	// avoid a deadlock reset the fence to unsignaled state
+	vkResetFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex]);
+
+	// record command buffer
+	vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrameIndex], 0);
+	RecordCommandBuffers(m_CommandBuffers[m_CurrentFrameIndex], nextImageIndex);
+
+	// submit the command buffer
+	std::array<VkSemaphore, 1> waitSemaphores{ m_ImageAvailableSemaphores[m_CurrentFrameIndex] };
+	std::array<VkSemaphore, 1> signalSemaphores{ m_RenderFinishedSemaphores[m_CurrentFrameIndex] };
+	std::array<VkPipelineStageFlags, 1> waitStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
+	submitInfo.pWaitSemaphores = waitSemaphores.data();
+	submitInfo.pWaitDstStageMask = waitStages.data();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrameIndex];
+	submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
+	submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+	// signals the fence after executing the command buffer
+	THROW(
+		vkQueueSubmit(Device::GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrameIndex]) != VK_SUCCESS,
+		"Failed to submit draw command buffer!")
+
+	// present the image
+	std::array<VkSwapchainKHR, 1> swapchains{ m_Swapchain };
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
+	presentInfo.pWaitSemaphores = signalSemaphores.data();
+	presentInfo.swapchainCount = static_cast<uint32_t>(swapchains.size());
+	presentInfo.pSwapchains = swapchains.data();
+	presentInfo.pImageIndices = &nextImageIndex;
+	presentInfo.pResults = nullptr;
+
+	vkQueuePresentKHR(Device::GetPresentQueue(), &presentInfo);
+
+	// update current frame index
+	m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % m_Config.maxFramesInFlight;
+}
+
+void Renderer::OnResize()
+{
+	RecreateSwapchain();
+}
 
 void Renderer::CreateSwapchain()
 {
@@ -64,33 +153,33 @@ void Renderer::CreateSwapchain()
 	QueueFamilyIndices queueFamilyIndices =
 		Device::FindQueueFamilies(Device::GetPhysicalDevice(), VulkanContext::GetWindowSurface());
 
-	VkSwapchainCreateInfoKHR swapchainCreateInfo{};
-	swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	swapchainCreateInfo.surface = VulkanContext::GetWindowSurface();
-	swapchainCreateInfo.minImageCount = imageCount;
-	swapchainCreateInfo.imageFormat = surfaceFormat.format;
-	swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
-	swapchainCreateInfo.imageExtent = extent;
-	swapchainCreateInfo.imageArrayLayers = 1;
-	swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	VkSwapchainCreateInfoKHR swapchainInfo{};
+	swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapchainInfo.surface = VulkanContext::GetWindowSurface();
+	swapchainInfo.minImageCount = imageCount;
+	swapchainInfo.imageFormat = surfaceFormat.format;
+	swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
+	swapchainInfo.imageExtent = extent;
+	swapchainInfo.imageArrayLayers = 1;
+	swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	if (queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.presentFamily.value())
 	{
 		uint32_t indicesArr[]{ queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value() };
-		swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		swapchainCreateInfo.queueFamilyIndexCount = 2;
-		swapchainCreateInfo.pQueueFamilyIndices = indicesArr;
+		swapchainInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		swapchainInfo.queueFamilyIndexCount = 2;
+		swapchainInfo.pQueueFamilyIndices = indicesArr;
 	}
 	else
 	{
-		swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	}
-	swapchainCreateInfo.preTransform = swapchainSupport.capabilities.currentTransform;
-	swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	swapchainCreateInfo.presentMode = presentMode;
-	swapchainCreateInfo.clipped = VK_TRUE;
-	swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+	swapchainInfo.preTransform = swapchainSupport.capabilities.currentTransform;
+	swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapchainInfo.presentMode = presentMode;
+	swapchainInfo.clipped = VK_TRUE;
+	swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	THROW(vkCreateSwapchainKHR(Device::GetDevice(), &swapchainCreateInfo, nullptr, &m_Swapchain) != VK_SUCCESS,
+	THROW(vkCreateSwapchainKHR(Device::GetDevice(), &swapchainInfo, nullptr, &m_Swapchain) != VK_SUCCESS,
 		"Failed to create swapchain!")
 
 	vkGetSwapchainImagesKHR(Device::GetDevice(), m_Swapchain, &imageCount, nullptr);
@@ -130,6 +219,23 @@ void Renderer::CleanupSwapchain()
 
 	// swapchain images are destroyed with `vkDestroySwapchainKHR()`
 	vkDestroySwapchainKHR(Device::GetDevice(), m_Swapchain, nullptr);
+}
+
+void Renderer::RecreateSwapchain()
+{
+	while (m_Window->IsMinimized())
+	{
+		m_Window->WaitEvents();
+	}
+
+	Device::WaitIdle();
+	CleanupSwapchain();
+
+	CreateSwapchain();
+	CreateSwapchainImageViews();
+	CreateColorResource();
+	CreateDepthResource();
+	CreateFramebuffers();
 }
 
 VkSurfaceFormatKHR Renderer::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -537,4 +643,29 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	vkCmdEndRenderPass(commandBuffer);
 
 	THROW(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS, "Failed to record command buffer!");
+}
+
+void Renderer::CreateSyncObjects()
+{
+	m_ImageAvailableSemaphores.resize(m_Config.maxFramesInFlight);
+	m_RenderFinishedSemaphores.resize(m_Config.maxFramesInFlight);
+	m_InFlightFences.resize(m_Config.maxFramesInFlight);
+
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	// create the fence in signaled state so that the first frame doesnt have to wait
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
+	{
+		THROW(vkCreateSemaphore(Device::GetDevice(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i])
+					  != VK_SUCCESS
+				  || vkCreateSemaphore(Device::GetDevice(), &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i])
+						 != VK_SUCCESS
+				  || vkCreateFence(Device::GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS,
+			"Failed to create synchronization objects!")
+	}
 }

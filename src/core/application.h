@@ -15,7 +15,7 @@ public:
 	void Run();
 
 	static inline Application& GetInstance() { return *s_Instance; }
-	inline Window& GetWindow() const { return *m_Window; }
+	[[nodiscard]] inline Window& GetWindow() const { return *m_Window; }
 
 private:
 	explicit Application(const char* title, uint32_t width = 1280, uint32_t height = 720);

@@ -37,6 +37,7 @@ public:
 	void OnUpdate();
 	void DestroyWindowSurface(VkInstance vulkanInstance);
 	void CreateWindowSurface(VkInstance vulkanInstance);
+	bool IsMinimized();
 
 	inline uint32_t GetWidth() const { return m_Data.width; }
 	inline uint32_t GetHeight() const { return m_Data.height; }
@@ -51,6 +52,7 @@ public:
 	{
 		return glfwGetRequiredInstanceExtensions(count);
 	}
+	inline void WaitEvents() { glfwWaitEvents(); }
 
 	// set event callbacks
 	inline void SetCloseEventCallbackFn(const CloseEventCallbackFn& callback) { m_Data.CloseEventCallback = callback; }

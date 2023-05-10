@@ -16,24 +16,23 @@ void CreateImage(uint32_t width,
 	VkImage& image,
 	VkDeviceMemory& imageMemory)
 {
-	VkImageCreateInfo imgCreateInfo{};
-	imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	imgCreateInfo.extent.width = width;
-	imgCreateInfo.extent.height = height;
-	imgCreateInfo.extent.depth = 1;
-	imgCreateInfo.mipLevels = miplevels;
-	imgCreateInfo.arrayLayers = 1;
-	imgCreateInfo.format = format;
-	imgCreateInfo.tiling = tiling;
-	imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imgCreateInfo.usage = usage;
-	imgCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imgCreateInfo.samples = numSamples;
-	imgCreateInfo.flags = 0; // for sparse images
+	VkImageCreateInfo imgInfo{};
+	imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imgInfo.imageType = VK_IMAGE_TYPE_2D;
+	imgInfo.extent.width = width;
+	imgInfo.extent.height = height;
+	imgInfo.extent.depth = 1;
+	imgInfo.mipLevels = miplevels;
+	imgInfo.arrayLayers = 1;
+	imgInfo.format = format;
+	imgInfo.tiling = tiling;
+	imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imgInfo.usage = usage;
+	imgInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imgInfo.samples = numSamples;
+	imgInfo.flags = 0; // for sparse images
 
-	THROW(vkCreateImage(Device::GetDevice(), &imgCreateInfo, nullptr, &image) != VK_SUCCESS,
-		"Failed to create image object!")
+	THROW(vkCreateImage(Device::GetDevice(), &imgInfo, nullptr, &image) != VK_SUCCESS, "Failed to create image object!")
 
 	VkMemoryRequirements memRequirements{};
 	vkGetImageMemoryRequirements(Device::GetDevice(), image, &memRequirements);

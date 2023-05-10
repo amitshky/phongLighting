@@ -16,6 +16,7 @@ Application::Application(const char* title, uint32_t, uint32_t)
 void Application::Init(const char* title)
 {
 	s_Instance = this;
+	Logger::Info("{} application initialized!", title);
 
 	m_Window = std::make_shared<Window>(WindowProps{ title });
 	// set window event callbacks
@@ -62,19 +63,21 @@ void Application::OnCloseEvent()
 	m_IsRunning = false;
 }
 
-void Application::OnResizeEvent(int, int)
+void Application::OnResizeEvent(int /*unused*/, int /*unused*/)
+{
+	m_Renderer->OnResize();
+}
+
+void Application::OnMouseMoveEvent(double /*unused*/, double /*unused*/)
 {}
 
-void Application::OnMouseMoveEvent(double, double)
+void Application::OnMouseButtonEvent(int /*unused*/, int /*unused*/, int /*unused*/)
 {}
 
-void Application::OnMouseButtonEvent(int, int, int)
+void Application::OnMouseScrollEvent(double /*unused*/, double /*unused*/)
 {}
 
-void Application::OnMouseScrollEvent(double, double)
-{}
-
-void Application::OnKeyEvent(int, int, int, int)
+void Application::OnKeyEvent(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
 	if (Input::IsKeyPressed(KEY_ESCAPE))
 		m_IsRunning = false;

@@ -76,12 +76,12 @@ void Device::CreateLogicalDevice()
 	float queuePriority = 1.0f;
 	for (const auto& queueFamily : uniqueQueueFamilies)
 	{
-		VkDeviceQueueCreateInfo queueCreateInfo{};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
+		VkDeviceQueueCreateInfo queueInfo{};
+		queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueInfo.queueFamilyIndex = queueFamily;
+		queueInfo.queueCount = 1;
+		queueInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfos.push_back(queueInfo);
 	}
 
 	// specify used device features
@@ -90,28 +90,28 @@ void Device::CreateLogicalDevice()
 	deviceFeatures.sampleRateShading = VK_TRUE; // enable sample shading
 
 	// create logical device
-	VkDeviceCreateInfo deviceCreateInfo{};
-	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+	VkDeviceCreateInfo deviceInfo{};
+	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
+	deviceInfo.pEnabledFeatures = &deviceFeatures;
 
 	// these are similar to create instance but they are device specific this
 	// time
-	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(m_Config.deviceExtensions.size());
-	deviceCreateInfo.ppEnabledExtensionNames = m_Config.deviceExtensions.data();
+	deviceInfo.enabledExtensionCount = static_cast<uint32_t>(m_Config.deviceExtensions.size());
+	deviceInfo.ppEnabledExtensionNames = m_Config.deviceExtensions.data();
 
 	if (m_Config.enableValidationLayers)
 	{
-		deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(m_Config.validationLayers.size());
-		deviceCreateInfo.ppEnabledLayerNames = m_Config.validationLayers.data();
+		deviceInfo.enabledLayerCount = static_cast<uint32_t>(m_Config.validationLayers.size());
+		deviceInfo.ppEnabledLayerNames = m_Config.validationLayers.data();
 	}
 	else
 	{
-		deviceCreateInfo.enabledLayerCount = 0;
+		deviceInfo.enabledLayerCount = 0;
 	}
 
-	THROW(vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_DeviceVk) != VK_SUCCESS,
+	THROW(vkCreateDevice(m_PhysicalDevice, &deviceInfo, nullptr, &m_DeviceVk) != VK_SUCCESS,
 		"Failed to create logcial device!");
 
 	// get the queue handle

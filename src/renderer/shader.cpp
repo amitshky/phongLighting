@@ -8,7 +8,6 @@
 Shader::Shader(const char* path, ShaderType type)
 	: m_Path{ path },
 	  m_Type{ type },
-	  m_ShaderCode{},
 	  m_ShaderModule{ VK_NULL_HANDLE },
 	  m_ShaderStage{} // has to be default initialized
 {
@@ -31,19 +30,19 @@ void Shader::LoadShader()
 	m_ShaderCode.resize(fileSize);
 
 	file.seekg(0);
-	file.read(m_ShaderCode.data(), fileSize);
+	file.read(m_ShaderCode.data(), static_cast<std::streamsize>(fileSize));
 	file.close();
 }
 
 void Shader::CreateShaderModule()
 {
-	VkShaderModuleCreateInfo shaderModuleCreateInfo{};
-	shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	shaderModuleCreateInfo.codeSize = m_ShaderCode.size();
+	VkShaderModuleCreateInfo shaderModuleInfo{};
+	shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	shaderModuleInfo.codeSize = m_ShaderCode.size();
 	// code is in char but shaderModule expects it to be in uint32_t
-	shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(m_ShaderCode.data());
+	shaderModuleInfo.pCode = reinterpret_cast<const uint32_t*>(m_ShaderCode.data());
 
-	if (vkCreateShaderModule(Device::GetDevice(), &shaderModuleCreateInfo, nullptr, &m_ShaderModule) != VK_SUCCESS)
+	if (vkCreateShaderModule(Device::GetDevice(), &shaderModuleInfo, nullptr, &m_ShaderModule) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create shader module!");
 }
 
@@ -57,5 +56,5 @@ void Shader::CreateShaderStage()
 		m_ShaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	m_ShaderStage.module = m_ShaderModule;
-	m_ShaderStage.pName = "main"; // entrypoint // so it is possible to combine multiple shaders into a single module
+	m_ShaderStage.pName = "main";
 }

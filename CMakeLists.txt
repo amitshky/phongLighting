@@ -11,11 +11,6 @@ add_subdirectory(src)
 add_subdirectory(lib)
 
 
-set(CMAKE_CXX_CLANG_TIDY
-    clang-tidy;
-    -header-filter=.;
-    -checks=*;)
-
 if(UNIX AND NOT APPLE)
 	set(LINUX TRUE)
 endif()

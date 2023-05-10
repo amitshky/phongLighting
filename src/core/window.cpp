@@ -82,3 +82,10 @@ void Window::CreateWindowSurface(VkInstance vulkanInstance)
 	THROW(glfwCreateWindowSurface(vulkanInstance, m_WindowHandle, nullptr, &m_WindowSurface) != VK_SUCCESS,
 		"Failed to create window surface!")
 }
+
+bool Window::IsMinimized()
+{
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_WindowHandle, &width, &height);
+	return width == 0 || height == 0;
+}

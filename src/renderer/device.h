@@ -11,7 +11,7 @@ struct QueueFamilyIndices
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
 
-	inline bool IsComplete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
+	[[nodiscard]] inline bool IsComplete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };
 
 struct SwapchainSupportDetails
@@ -36,6 +36,9 @@ public:
 	static inline VkQueue GetGraphicsQueue() { return s_Instance->m_GraphicsQueue; }
 	static inline VkQueue GetPresentQueue() { return s_Instance->m_PresentQueue; }
 	static inline VkSampleCountFlagBits GetMSAASamplesCount() { return s_Instance->m_MsaaSamples; }
+
+	// waits for the device to finish operations
+	static inline void WaitIdle() { vkDeviceWaitIdle(s_Instance->m_DeviceVk); }
 
 	// device details functions
 	static uint32_t
