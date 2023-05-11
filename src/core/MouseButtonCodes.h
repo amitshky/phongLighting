@@ -1,15 +1,17 @@
 #pragma once
 
-// From glfw3.h
-#define MOUSE_BUTTON_1      0
-#define MOUSE_BUTTON_2      1
-#define MOUSE_BUTTON_3      2
-#define MOUSE_BUTTON_4      3
-#define MOUSE_BUTTON_5      4
-#define MOUSE_BUTTON_6      5
-#define MOUSE_BUTTON_7      6
-#define MOUSE_BUTTON_8      7
-#define MOUSE_BUTTON_LAST   MOUSE_BUTTON_8
-#define MOUSE_BUTTON_LEFT   MOUSE_BUTTON_1
-#define MOUSE_BUTTON_RIGHT  MOUSE_BUTTON_2
-#define MOUSE_BUTTON_MIDDLE MOUSE_BUTTON_3
+enum Mouse : int {
+	// From glfw3.h
+	BUTTON_1 = 0,
+	BUTTON_2 = 1,
+	BUTTON_3 = 2,
+	BUTTON_4 = 3,
+	BUTTON_5 = 4,
+	BUTTON_6 = 5,
+	BUTTON_7 = 6,
+	BUTTON_8 = 7,
+	BUTTON_LAST = BUTTON_8,
+	BUTTON_LEFT = BUTTON_1,
+	BUTTON_RIGHT = BUTTON_2,
+	BUTTON_MIDDLE = BUTTON_3,
+};

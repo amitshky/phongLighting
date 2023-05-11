@@ -67,12 +67,12 @@ void Application::Run()
 
 void Application::ProcessInput()
 {
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_1))
+	if (Input::IsMouseButtonPressed(Mouse::BUTTON_1))
 	{
 		// hide cursor when moving camera
 		m_Window->HideCursor();
 	}
-	else if (Input::IsMouseButtonReleased(MOUSE_BUTTON_1))
+	else if (Input::IsMouseButtonReleased(Mouse::BUTTON_1))
 	{
 		// unhide cursor when camera stops moving
 		m_Window->ShowCursor();
@@ -102,6 +102,6 @@ void Application::OnMouseScrollEvent(double /*unused*/, double /*unused*/)
 
 void Application::OnKeyEvent(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
-	if (Input::IsKeyPressed(KEY_ESCAPE))
+	if (Input::IsKeyPressed(Key::ESCAPE))
 		m_IsRunning = false;
 }

@@ -43,23 +43,23 @@ void Camera::OnUpdate(float deltatime)
 
 	// movement
 	const float cameraSpeed = 3.0f * deltatime;
-	if (Input::IsKeyPressed(KEY_W)) // forward
+	if (Input::IsKeyPressed(Key::W)) // forward
 		m_CameraPos += cameraSpeed * m_CameraFront;
-	else if (Input::IsKeyPressed(KEY_S)) // backward
+	else if (Input::IsKeyPressed(Key::S)) // backward
 		m_CameraPos -= cameraSpeed * m_CameraFront;
 
-	if (Input::IsKeyPressed(KEY_A)) // left
+	if (Input::IsKeyPressed(Key::A)) // left
 		m_CameraPos -= cameraSpeed * (glm::normalize(glm::cross(m_CameraFront, m_CameraUp)));
-	else if (Input::IsKeyPressed(KEY_D)) // right
+	else if (Input::IsKeyPressed(Key::D)) // right
 		m_CameraPos += cameraSpeed * (glm::normalize(glm::cross(m_CameraFront, m_CameraUp)));
 
-	if (Input::IsKeyPressed(KEY_E)) // up
+	if (Input::IsKeyPressed(Key::E)) // up
 	{
 		const glm::vec3 rightVec = glm::cross(m_CameraFront, m_CameraUp);
 		const glm::vec3 upVec = glm::cross(rightVec, m_CameraFront);
 		m_CameraPos += cameraSpeed * glm::normalize(upVec);
 	}
-	else if (Input::IsKeyPressed(KEY_Q)) // down
+	else if (Input::IsKeyPressed(Key::Q)) // down
 	{
 		const glm::vec3 rightVec = glm::cross(m_CameraFront, m_CameraUp);
 		const glm::vec3 upVec = glm::cross(rightVec, m_CameraFront);
@@ -67,7 +67,7 @@ void Camera::OnUpdate(float deltatime)
 	}
 
 	// reset camera
-	if (Input::IsKeyPressed(KEY_R))
+	if (Input::IsKeyPressed(Key::R))
 	{
 		m_FirstMouseMove = true;
 		m_CameraPos = g_CameraPos;
@@ -84,7 +84,7 @@ void Camera::OnUpdate(float deltatime)
 void Camera::OnMouseMove(double xpos, double ypos)
 {
 	// initial values: m_Yaw = -90.0f, m_Pitch = 0.0f
-	if (!Input::IsMouseButtonPressed(MOUSE_BUTTON_1)) // only move the camera on mouse button click
+	if (!Input::IsMouseButtonPressed(Mouse::BUTTON_1)) // only move the camera on mouse button click
 	{
 		m_FirstMouseMove = true;
 		return;
