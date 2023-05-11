@@ -2,7 +2,10 @@
 
 #include <array>
 #include <numeric>
+#include <chrono>
 #include <algorithm>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "core/core.h"
 #include "renderer/shader.h"
 #include "utils/utils.h"
@@ -42,6 +45,7 @@ void Renderer::Init(const char* title)
 	CreateDepthResource();
 	CreateFramebuffers();
 
+	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 
 	CreateCommandPool();
@@ -51,11 +55,24 @@ void Renderer::Init(const char* title)
 
 	CreateVertexBuffer();
 	CreateIndexBuffer();
+
+	CreateUniformBuffers();
+	CreateDescriptorPool();
+	CreateDescriptorSets();
 }
 
 void Renderer::Terminate()
 {
 	Device::WaitIdle();
+
+	vkDestroyDescriptorPool(Device::GetDevice(), m_DescriptorPool, nullptr);
+	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
+	{
+		vkUnmapMemory(Device::GetDevice(), m_UniformBufferMemory[i]);
+		vkFreeMemory(Device::GetDevice(), m_UniformBufferMemory[i], nullptr);
+		vkDestroyBuffer(Device::GetDevice(), m_UniformBuffers[i], nullptr);
+	}
+	vkDestroyDescriptorSetLayout(Device::GetDevice(), m_DescriptorSetLayout, nullptr);
 
 	vkFreeMemory(Device::GetDevice(), m_IndexBufferMemory, nullptr);
 	vkDestroyBuffer(Device::GetDevice(), m_IndexBuffer, nullptr);
@@ -117,6 +134,8 @@ void Renderer::Draw()
 	// record command buffer
 	vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrameIndex], 0);
 	RecordCommandBuffers(m_CommandBuffers[m_CurrentFrameIndex], nextImageIndex);
+
+	UpdateUniformBuffer(m_CurrentFrameIndex);
 
 	// submit the command buffer
 	std::array<VkSemaphore, 1> waitSemaphores{ m_ImageAvailableSemaphores[m_CurrentFrameIndex] };
@@ -559,8 +578,8 @@ void Renderer::CreateGraphicsPipeline()
 	// specify uniforms
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr; // TODO: incomplete
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
 	// push constants are another way of passing dynamic values to the shaders
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
@@ -667,13 +686,18 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	VkDeviceSize offsets[]{ 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-	// TODO: incomplete
+	vkCmdBindDescriptorSets(commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_PipelineLayout,
+		0,
+		1,
+		&m_DescriptorSets[m_CurrentFrameIndex],
+		0,
+		nullptr);
 
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
-
 	THROW(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS, "Failed to record command buffer!");
 }
 
@@ -760,4 +784,122 @@ void Renderer::CreateIndexBuffer()
 
 	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
 	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
+}
+
+void Renderer::CreateDescriptorSetLayout()
+{
+	// uniform buffer
+	VkDescriptorSetLayoutBinding uboLayout{};
+	uboLayout.binding = 0; // binding in the shader
+	uboLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayout.descriptorCount = 1;
+	uboLayout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboLayout.pImmutableSamplers = nullptr;
+
+	std::array<VkDescriptorSetLayoutBinding, 1> bindings{ uboLayout };
+
+	VkDescriptorSetLayoutCreateInfo descriptorSetInfo{};
+	descriptorSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	descriptorSetInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	descriptorSetInfo.pBindings = bindings.data();
+
+	THROW(vkCreateDescriptorSetLayout(Device::GetDevice(), &descriptorSetInfo, nullptr, &m_DescriptorSetLayout)
+			  != VK_SUCCESS,
+		"Failed to create descriptor set layout!");
+}
+
+void Renderer::CreateUniformBuffers()
+{
+	VkDeviceSize size = static_cast<uint64_t>(sizeof(UniformBufferObject));
+
+	m_UniformBuffers.resize(m_Config.maxFramesInFlight);
+	m_UniformBufferMemory.resize(m_Config.maxFramesInFlight);
+	m_UniformBufferMapped.resize(m_Config.maxFramesInFlight);
+
+	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
+	{
+		utils::CreateBuffer(size,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_UniformBuffers[i],
+			m_UniformBufferMemory[i]);
+
+		vkMapMemory(Device::GetDevice(), m_UniformBufferMemory[i], 0, size, 0, &m_UniformBufferMapped[i]);
+	}
+}
+
+void Renderer::CreateDescriptorPool()
+{
+	std::array<VkDescriptorPoolSize, 1> poolSizes{};
+	// uniform buffer
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_Config.maxFramesInFlight);
+
+	VkDescriptorPoolCreateInfo descriptorPoolInfo{};
+	descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	descriptorPoolInfo.maxSets = static_cast<uint32_t>(m_Config.maxFramesInFlight);
+	descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	descriptorPoolInfo.pPoolSizes = poolSizes.data();
+
+	THROW(vkCreateDescriptorPool(Device::GetDevice(), &descriptorPoolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS,
+		"Failed to create descriptor pool!");
+}
+
+void Renderer::CreateDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts{ m_Config.maxFramesInFlight, m_DescriptorSetLayout };
+
+	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
+	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocateInfo.descriptorPool = m_DescriptorPool;
+	descriptorSetAllocateInfo.descriptorSetCount = static_cast<uint32_t>(m_Config.maxFramesInFlight);
+	descriptorSetAllocateInfo.pSetLayouts = layouts.data();
+
+	// we create one descriptor set for each frame with the same layout
+	m_DescriptorSets.resize(m_Config.maxFramesInFlight);
+	THROW(vkAllocateDescriptorSets(Device::GetDevice(), &descriptorSetAllocateInfo, m_DescriptorSets.data())
+			  != VK_SUCCESS,
+		"Failed to allocate descriptor sets!")
+
+	// configure descriptors in the descriptor sets
+	for (size_t i = 0; i < m_Config.maxFramesInFlight; ++i)
+	{
+		// uniform buffer
+		VkDescriptorBufferInfo descriptorBufferInfo{};
+		descriptorBufferInfo.buffer = m_UniformBuffers[i];
+		descriptorBufferInfo.offset = 0;
+		descriptorBufferInfo.range = sizeof(UniformBufferObject);
+
+		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+		// uniform buffer
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = m_DescriptorSets[i];
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &descriptorBufferInfo;
+
+		// updates the configurations of the descriptor sets
+		vkUpdateDescriptorSets(
+			Device::GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
+}
+
+void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f),
+		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height),
+		0.1f,
+		10.0f);
+	ubo.proj[1][1] *= -1;
+
+	memcpy(m_UniformBufferMapped[currentFrameIndex], &ubo, sizeof(ubo));
 }

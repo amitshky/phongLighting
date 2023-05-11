@@ -6,6 +6,7 @@
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
 #include "renderer/vertexBuffer.h"
+#include "renderer/uniformBuffer.h"
 
 
 class Renderer
@@ -49,9 +50,16 @@ private:
 	// synchronization objects
 	void CreateSyncObjects();
 
-	// vertex buffer
+	// vertex and index buffer
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
+
+	// uniform buffer
+	void CreateDescriptorSetLayout();
+	void CreateUniformBuffers();
+	void CreateDescriptorPool();
+	void CreateDescriptorSets();
+	void UpdateUniformBuffer(uint32_t currentFrameIndex);
 
 private:
 	const VulkanConfig m_Config;
@@ -80,7 +88,6 @@ private:
 	std::vector<VkFramebuffer> m_SwapchainFramebuffers;
 
 	// pipeline
-	VkPipelineLayout m_PipelineLayout;
 	VkPipeline m_Pipeline;
 
 	// command buffer
@@ -100,6 +107,16 @@ private:
 	// index buffer
 	VkBuffer m_IndexBuffer;
 	VkDeviceMemory m_IndexBufferMemory;
+
+	// resource descriptors
+	VkDescriptorSetLayout m_DescriptorSetLayout;
+	VkPipelineLayout m_PipelineLayout;
+	VkDescriptorPool m_DescriptorPool;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
+	// uniform buffers
+	std::vector<VkBuffer> m_UniformBuffers;
+	std::vector<VkDeviceMemory> m_UniformBufferMemory;
+	std::vector<void*> m_UniformBufferMapped;
 
 	uint32_t m_CurrentFrameIndex = 0;
 	bool m_FramebufferResized = false;
