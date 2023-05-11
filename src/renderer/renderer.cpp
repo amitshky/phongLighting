@@ -8,11 +8,20 @@
 #include "utils/utils.h"
 
 
+const std::vector<Vertex> vertices{
+	{{ -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }},
+	{ { 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }},
+	{ { 0.5f, 0.5f },  { 0.0f, 0.0f, 1.0f }},
+	{ { -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f }}
+};
+
+const std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
+
 Renderer::Renderer(const char* title, const VulkanConfig& config, std::shared_ptr<Window> window)
 	: m_Config{ config },
 	  m_Window{ std::move(window) }
 {
-	Init(title, config);
+	Init(title);
 }
 
 Renderer::~Renderer()
@@ -20,26 +29,39 @@ Renderer::~Renderer()
 	Terminate();
 }
 
-void Renderer::Init(const char* title, const VulkanConfig& config)
+void Renderer::Init(const char* title)
 {
-	m_VulkanContext = VulkanContext::Create(title, config, m_Window);
-	m_Device = Device::Create(config, m_Window->GetWindowSurface());
+	m_VulkanContext = VulkanContext::Create(title, m_Config, m_Window);
+	m_Device = Device::Create(m_Config, m_Window->GetWindowSurface());
 
 	CreateSwapchain();
 	CreateSwapchainImageViews();
+
 	CreateRenderPass();
 	CreateColorResource();
 	CreateDepthResource();
 	CreateFramebuffers();
+
 	CreateGraphicsPipeline();
+
 	CreateCommandPool();
 	CreateCommandBuffers();
+
 	CreateSyncObjects();
+
+	CreateVertexBuffer();
+	CreateIndexBuffer();
 }
 
 void Renderer::Terminate()
 {
 	Device::WaitIdle();
+
+	vkFreeMemory(Device::GetDevice(), m_IndexBufferMemory, nullptr);
+	vkDestroyBuffer(Device::GetDevice(), m_IndexBuffer, nullptr);
+
+	vkFreeMemory(Device::GetDevice(), m_VertexBufferMemory, nullptr);
+	vkDestroyBuffer(Device::GetDevice(), m_VertexBuffer, nullptr);
 
 	for (size_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
@@ -444,11 +466,15 @@ void Renderer::CreateGraphicsPipeline()
 
 	// fixed functions
 	// vertex input
-	// TODO: incomplete
+	auto vertexBindingDesc = Vertex::GetBindingDescription();
+	auto vertexAttrDesc = Vertex::GetAttributeDescription();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &vertexBindingDesc;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttrDesc.size());
+	vertexInputInfo.pVertexAttributeDescriptions = vertexAttrDesc.data();
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
@@ -637,8 +663,14 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	scissor.extent = m_SwapchainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+	VkBuffer vertexBuffers[]{ m_VertexBuffer };
+	VkDeviceSize offsets[]{ 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
 	// TODO: incomplete
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -668,4 +700,64 @@ void Renderer::CreateSyncObjects()
 				  || vkCreateFence(Device::GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS,
 			"Failed to create synchronization objects!")
 	}
+}
+
+void Renderer::CreateVertexBuffer()
+{
+	VkDeviceSize size = sizeof(vertices[0]) * static_cast<uint64_t>(vertices.size());
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+	utils::CreateBuffer(size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer,
+		stagingBufferMem);
+
+	void* data;
+	vkMapMemory(Device::GetDevice(), stagingBufferMem, 0, size, 0, &data);
+	memcpy(data, vertices.data(), static_cast<size_t>(size));
+	vkUnmapMemory(Device::GetDevice(), stagingBufferMem);
+
+	// create the actual vertex buffer
+	utils::CreateBuffer(size,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_VertexBuffer,
+		m_VertexBufferMemory);
+
+	utils::CopyBuffer(m_CommandPool, stagingBuffer, m_VertexBuffer, size);
+
+	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
+	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
+}
+
+void Renderer::CreateIndexBuffer()
+{
+	VkDeviceSize size = sizeof(indices[0]) * static_cast<uint64_t>(indices.size());
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+	utils::CreateBuffer(size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer,
+		stagingBufferMem);
+
+	void* data;
+	vkMapMemory(Device::GetDevice(), stagingBufferMem, 0, size, 0, &data);
+	memcpy(data, indices.data(), static_cast<size_t>(size));
+	vkUnmapMemory(Device::GetDevice(), stagingBufferMem);
+
+	// create the actual vertex buffer
+	utils::CreateBuffer(size,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_IndexBuffer,
+		m_IndexBufferMemory);
+
+	utils::CopyBuffer(m_CommandPool, stagingBuffer, m_IndexBuffer, size);
+
+	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
+	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
 }

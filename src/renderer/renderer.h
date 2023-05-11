@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
+#include "renderer/vertexBuffer.h"
 
 
 class Renderer
@@ -17,7 +18,7 @@ public:
 	void OnResize();
 
 private:
-	void Init(const char* title, const VulkanConfig& config);
+	void Init(const char* title);
 	void Terminate();
 
 	// swapchain
@@ -47,6 +48,10 @@ private:
 
 	// synchronization objects
 	void CreateSyncObjects();
+
+	// vertex buffer
+	void CreateVertexBuffer();
+	void CreateIndexBuffer();
 
 private:
 	const VulkanConfig m_Config;
@@ -88,6 +93,13 @@ private:
 	// signaled when command buffers have finished execution
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 	std::vector<VkFence> m_InFlightFences;
+
+	// vertex buffer
+	VkBuffer m_VertexBuffer;
+	VkDeviceMemory m_VertexBufferMemory;
+	// index buffer
+	VkBuffer m_IndexBuffer;
+	VkDeviceMemory m_IndexBufferMemory;
 
 	uint32_t m_CurrentFrameIndex = 0;
 	bool m_FramebufferResized = false;
