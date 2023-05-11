@@ -59,6 +59,9 @@ void Renderer::Init(const char* title)
 	CreateUniformBuffers();
 	CreateDescriptorPool();
 	CreateDescriptorSets();
+
+	m_Camera = std::make_unique<Camera>(
+		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height));
 }
 
 void Renderer::Terminate()
@@ -100,7 +103,7 @@ void Renderer::Terminate()
 	delete m_VulkanContext;
 }
 
-void Renderer::Draw()
+void Renderer::Draw(float deltatime)
 {
 	// wait for previous frame to signal the fence
 	vkWaitForFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
@@ -170,13 +173,21 @@ void Renderer::Draw()
 
 	vkQueuePresentKHR(Device::GetPresentQueue(), &presentInfo);
 
+	m_Camera->OnUpdate(deltatime);
 	// update current frame index
 	m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % m_Config.maxFramesInFlight;
 }
 
-void Renderer::OnResize()
+void Renderer::OnResize(int /*unused*/, int /*unused*/)
 {
 	RecreateSwapchain();
+	m_Camera->SetAspectRatio(
+		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height));
+}
+
+void Renderer::OnMouseMove(double xpos, double ypos)
+{
+	m_Camera->OnMouseMove(xpos, ypos);
 }
 
 void Renderer::CreateSwapchain()
@@ -894,12 +905,9 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 
 	UniformBufferObject ubo{};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f),
-		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height),
-		0.1f,
-		10.0f);
-	ubo.proj[1][1] *= -1;
+	ubo.view = m_Camera->GetViewMatrix();
+	ubo.proj = m_Camera->GetProjectionMatrix();
+	// ubo.proj[1][1] *= -1;
 
 	memcpy(m_UniformBufferMapped[currentFrameIndex], &ubo, sizeof(ubo));
 }

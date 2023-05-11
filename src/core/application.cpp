@@ -1,9 +1,8 @@
 #include "core/application.h"
 
+#include <chrono>
 #include "core/core.h"
 #include "core/input.h"
-#include "core/keyCodes.h"
-#include "core/mouseButtonCodes.h"
 
 
 Application* Application::s_Instance = nullptr;
@@ -51,10 +50,32 @@ Application* Application::Create(const char* title)
 
 void Application::Run()
 {
+	static auto lastFrameTime = std::chrono::high_resolution_clock::now();
+
 	while (m_IsRunning)
 	{
-		m_Renderer->Draw();
+		auto currentFrameTime = std::chrono::high_resolution_clock::now();
+		float deltatime =
+			std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
+		lastFrameTime = currentFrameTime;
+
+		m_Renderer->Draw(deltatime);
 		m_Window->OnUpdate();
+		ProcessInput();
+	}
+}
+
+void Application::ProcessInput()
+{
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_1))
+	{
+		// hide cursor when moving camera
+		m_Window->HideCursor();
+	}
+	else if (Input::IsMouseButtonReleased(MOUSE_BUTTON_1))
+	{
+		// unhide cursor when camera stops moving
+		m_Window->ShowCursor();
 	}
 }
 
@@ -63,13 +84,15 @@ void Application::OnCloseEvent()
 	m_IsRunning = false;
 }
 
-void Application::OnResizeEvent(int /*unused*/, int /*unused*/)
+void Application::OnResizeEvent(int width, int height)
 {
-	m_Renderer->OnResize();
+	m_Renderer->OnResize(width, height);
 }
 
-void Application::OnMouseMoveEvent(double /*unused*/, double /*unused*/)
-{}
+void Application::OnMouseMoveEvent(double xpos, double ypos)
+{
+	m_Renderer->OnMouseMove(xpos, ypos);
+}
 
 void Application::OnMouseButtonEvent(int /*unused*/, int /*unused*/, int /*unused*/)
 {}

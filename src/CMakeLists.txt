@@ -14,6 +14,7 @@ add_executable(
 	renderer/shader.cpp
 	renderer/vertexBuffer.cpp
 	renderer/uniformBuffer.cpp
+	renderer/camera.cpp
 
 	utils/utils.cpp
 )

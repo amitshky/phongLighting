@@ -1,6 +1,8 @@
 #pragma once
 
 #include <utility>
+#include "core/keyCodes.h"
+#include "core/mouseButtonCodes.h"
 
 class Input
 {

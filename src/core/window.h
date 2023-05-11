@@ -53,6 +53,8 @@ public:
 		return glfwGetRequiredInstanceExtensions(count);
 	}
 	inline void WaitEvents() { glfwWaitEvents(); }
+	inline void HideCursor() { glfwSetInputMode(m_WindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED); }
+	inline void ShowCursor() { glfwSetInputMode(m_WindowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
 
 	// set event callbacks
 	inline void SetCloseEventCallbackFn(const CloseEventCallbackFn& callback) { m_Data.CloseEventCallback = callback; }

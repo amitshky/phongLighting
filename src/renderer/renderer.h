@@ -7,6 +7,7 @@
 #include "renderer/device.h"
 #include "renderer/vertexBuffer.h"
 #include "renderer/uniformBuffer.h"
+#include "renderer/camera.h"
 
 
 class Renderer
@@ -15,8 +16,9 @@ public:
 	Renderer(const char* title, const VulkanConfig& config, std::shared_ptr<Window> window);
 	~Renderer();
 
-	void Draw();
-	void OnResize();
+	void Draw(float deltatime);
+	void OnResize(int width, int height);
+	void OnMouseMove(double xpos, double ypos);
 
 private:
 	void Init(const char* title);
@@ -117,6 +119,8 @@ private:
 	std::vector<VkBuffer> m_UniformBuffers;
 	std::vector<VkDeviceMemory> m_UniformBufferMemory;
 	std::vector<void*> m_UniformBufferMapped;
+
+	std::unique_ptr<Camera> m_Camera;
 
 	uint32_t m_CurrentFrameIndex = 0;
 	bool m_FramebufferResized = false;
