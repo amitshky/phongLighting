@@ -98,20 +98,6 @@ void CreateBuffer(VkDeviceSize size,
 	vkBindBufferMemory(Device::GetDevice(), buffer, bufferMemory, 0);
 }
 
-void CopyBuffer(VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-{
-	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
-
-	VkBufferCopy copyRegion{};
-	copyRegion.srcOffset = 0;
-	copyRegion.dstOffset = 0;
-	copyRegion.size = size;
-	// transfer the contents of the buffers
-	vkCmdCopyBuffer(cmdBuff, srcBuffer, dstBuffer, 1, &copyRegion);
-
-	EndSingleTimeCommands(commandPool, cmdBuff);
-}
-
 VkCommandBuffer BeginSingleTimeCommands(VkCommandPool commandPool)
 {
 	VkCommandBufferAllocateInfo cmdBuffAllocInfo{};
@@ -147,6 +133,171 @@ void EndSingleTimeCommands(VkCommandPool commandPool, VkCommandBuffer cmdBuff)
 	vkQueueWaitIdle(Device::GetGraphicsQueue());
 
 	vkFreeCommandBuffers(Device::GetDevice(), commandPool, 1, &cmdBuff);
+}
+
+void CopyBuffer(VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
+
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0;
+	copyRegion.dstOffset = 0;
+	copyRegion.size = size;
+	// transfer the contents of the buffers
+	vkCmdCopyBuffer(cmdBuff, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	EndSingleTimeCommands(commandPool, cmdBuff);
+}
+
+void CopyBufferToImage(VkCommandPool commandPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+{
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
+
+	// specify which part of the buffer is going to be copied to which part of the image
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferImageHeight = 0;
+	region.bufferRowLength = 0;
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	// part of the image to copy to
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = { width, height, 1 };
+
+	vkCmdCopyBufferToImage(cmdBuff, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	EndSingleTimeCommands(commandPool, cmdBuff);
+}
+
+void GenerateMipmaps(VkCommandPool commandPool,
+	VkImage image,
+	VkFormat format,
+	int32_t width,
+	int32_t height,
+	uint32_t mipLevels)
+{
+	// TODO: load mipmaps from a file instead of generating them
+
+	VkFormatProperties formatProperties;
+	vkGetPhysicalDeviceFormatProperties(Device::GetPhysicalDevice(), format, &formatProperties);
+	// check image format's support for linear filter
+	THROW(!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT),
+		"Texture image format does not support linear blitting!");
+
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
+
+	VkImageMemoryBarrier imgBarrier{};
+	imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imgBarrier.image = image;
+	imgBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imgBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imgBarrier.subresourceRange.baseArrayLayer = 0;
+	imgBarrier.subresourceRange.layerCount = 1;
+	imgBarrier.subresourceRange.levelCount = 1;
+
+	int32_t mipWidth = width;
+	int32_t mipHeight = height;
+
+	for (uint32_t i = 1; i < mipLevels; ++i)
+	{
+		// trasition the `i - 1` mip level to
+		// `VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL`
+		imgBarrier.subresourceRange.baseMipLevel = i - 1;
+		imgBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imgBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imgBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imgBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(cmdBuff,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			0,
+			0,
+			nullptr,
+			0,
+			nullptr,
+			1,
+			&imgBarrier);
+
+		// specify the region to be used in blit operation
+		// the src mip level is `i - 1`
+		// the dst mip level is `i`
+		VkImageBlit blit{};
+		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		vkCmdBlitImage(cmdBuff,
+			image,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			image,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&blit,
+			VK_FILTER_LINEAR);
+
+		// trasition the `i - 1` mip level to
+		// `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL` all the sampling
+		// operations will wait on this transition to finish
+		imgBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		imgBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imgBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imgBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(cmdBuff,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+			0,
+			0,
+			nullptr,
+			0,
+			nullptr,
+			1,
+			&imgBarrier);
+
+		// one of the dimensions will reach 1 before the other, so keep it 1
+		// when it does (because the image is not a square)
+		if (mipWidth > 1)
+			mipWidth /= 2;
+
+		if (mipHeight > 1)
+			mipHeight /= 2;
+	}
+
+	// this barrier transitions the last mip level from
+	// `VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL` to
+	// `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL` the loop doesnt handle
+	// this
+	imgBarrier.subresourceRange.baseMipLevel = mipLevels - 1;
+	imgBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imgBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imgBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imgBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(cmdBuff,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0,
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		&imgBarrier);
+
+	EndSingleTimeCommands(commandPool, cmdBuff);
 }
 
 } // namespace utils

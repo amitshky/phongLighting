@@ -92,17 +92,17 @@ void Camera::OnMouseMove(double xpos, double ypos)
 
 	if (m_FirstMouseMove)
 	{
-		m_LastX = xpos;
-		m_LastY = ypos;
+		m_LastX = static_cast<float>(xpos);
+		m_LastY = static_cast<float>(ypos);
 		m_FirstMouseMove = false;
 	}
 
 	const float sensitivity = 0.1f;
-	float xOffset = (xpos - m_LastX) * sensitivity;
-	float yOffset = (ypos - m_LastY) * sensitivity;
+	float xOffset = (static_cast<float>(xpos) - m_LastX) * sensitivity;
+	float yOffset = (static_cast<float>(ypos) - m_LastY) * sensitivity;
 
-	m_LastX = xpos;
-	m_LastY = ypos;
+	m_LastX = static_cast<float>(xpos);
+	m_LastY = static_cast<float>(ypos);
 
 	m_Yaw += xOffset;
 	m_Pitch -= yOffset; // negative because the y coord is flupped in projection matrix

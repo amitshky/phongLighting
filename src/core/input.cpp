@@ -4,28 +4,28 @@
 #include "core/application.h"
 
 
-bool Input::IsKeyPressed(int keycode)
+bool Input::IsKeyPressed(Key keycode)
 {
 	GLFWwindow* window = Application::GetInstance().GetWindow().GetWindowHandle();
 	auto status = glfwGetKey(window, keycode);
 	return status == GLFW_PRESS || status == GLFW_REPEAT;
 }
 
-bool Input::IsKeyReleased(int keycode)
+bool Input::IsKeyReleased(Key keycode)
 {
 	GLFWwindow* window = Application::GetInstance().GetWindow().GetWindowHandle();
 	auto status = glfwGetKey(window, keycode);
 	return status == GLFW_RELEASE;
 }
 
-bool Input::IsMouseButtonPressed(int button)
+bool Input::IsMouseButtonPressed(Mouse button)
 {
 	GLFWwindow* window = Application::GetInstance().GetWindow().GetWindowHandle();
 	auto status = glfwGetMouseButton(window, button);
 	return status == GLFW_PRESS;
 }
 
-bool Input::IsMouseButtonReleased(int button)
+bool Input::IsMouseButtonReleased(Mouse button)
 {
 	GLFWwindow* window = Application::GetInstance().GetWindow().GetWindowHandle();
 	auto status = glfwGetMouseButton(window, button);

@@ -63,6 +63,16 @@ private:
 	void CreateDescriptorSets();
 	void UpdateUniformBuffer(uint32_t currentFrameIndex);
 
+	// textures
+	void CreateTextureImage();
+	void CreateTextureImageView();
+	void CreateTextureSampler();
+	void TransitionImageLayout(VkImage image,
+		VkFormat format,
+		VkImageLayout oldLayout,
+		VkImageLayout newLayout,
+		uint32_t miplevels);
+
 private:
 	const VulkanConfig m_Config;
 	std::shared_ptr<Window> m_Window;
@@ -120,8 +130,15 @@ private:
 	std::vector<VkDeviceMemory> m_UniformBufferMemory;
 	std::vector<void*> m_UniformBufferMapped;
 
+	// textures
+	VkImage m_TextureImage;
+	VkDeviceMemory m_TextureImageMemory;
+	VkImageView m_TextureImageView;
+	VkSampler m_TextureSampler;
+
 	std::unique_ptr<Camera> m_Camera;
 
 	uint32_t m_CurrentFrameIndex = 0;
 	bool m_FramebufferResized = false;
+	uint32_t m_Miplevels = 1;
 };

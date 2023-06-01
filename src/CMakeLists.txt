@@ -3,6 +3,7 @@ add_executable(
 
 	main.cpp
 
+	core/core.cpp
 	core/application.cpp
 	core/input.cpp
 	core/window.cpp

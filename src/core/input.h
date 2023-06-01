@@ -7,11 +7,11 @@
 class Input
 {
 public:
-	static bool IsKeyPressed(int keycode);
-	static bool IsKeyReleased(int keycode);
+	static bool IsKeyPressed(Key keycode);
+	static bool IsKeyReleased(Key keycode);
 
-	static bool IsMouseButtonPressed(int button);
-	static bool IsMouseButtonReleased(int button);
+	static bool IsMouseButtonPressed(Mouse button);
+	static bool IsMouseButtonReleased(Mouse button);
 
 	static std::pair<float, float> GetMousePosition();
 	static float GetMouseX();
