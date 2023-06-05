@@ -12,19 +12,59 @@
 #include "utils/utils.h"
 
 
-const std::vector<Vertex> vertices{
-	{{ -0.5f, -0.5f, 0.0f },   { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }},
-	{ { 0.5f, -0.5f, 0.0f },   { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }},
-	{ { 0.5f, 0.5f, 0.0f },    { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }},
-	{ { -0.5f, 0.5f, 0.0f },   { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f }},
+const std::vector<Vertex> vertexData{
+  // front
+	{{ -0.5f, 0.5f, 0.5f },    { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 3
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }}, // 2
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 1
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 1
+	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }}, // 0
+	{ { -0.5f, 0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 3
 
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }},
-	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }},
-	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }},
-	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f }}
+  // right
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 2
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }}, // 6
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }}, // 1
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 2
+
+  // back
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 6
+	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }}, // 7
+	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 4
+	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 4
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }}, // 5
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 6
+
+  // left
+	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+	{ { -0.5f, 0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }}, // 3
+	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 0
+	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 0
+	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }}, // 4
+	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+
+  // top
+	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }}, // 6
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 2
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 2
+	{ { -0.5f, 0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f }}, // 3
+	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+
+  // bottom
+	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 0
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f }}, // 1
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
+	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }}, // 4
+	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 0
 };
 
-const std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
+auto modelData = utils::GetModelData(vertexData);
+const std::vector<uint32_t> indices = modelData.first;
+const std::vector<Vertex> vertices = modelData.second;
 
 Renderer::Renderer(const char* title, const VulkanConfig& config, std::shared_ptr<Window> window)
 	: m_Config{ config },
@@ -540,7 +580,7 @@ void Renderer::CreateGraphicsPipeline()
 	rasterizationStateInfo.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationStateInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizationStateInfo.lineWidth = 1.0f;
-	rasterizationStateInfo.cullMode = VK_CULL_MODE_NONE;
+	rasterizationStateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 	// we specify counter clockwise because in the projection matrix we flipped the y-coord
 	rasterizationStateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	// the depth value can be altered by adding a constant value based on fragment slope
@@ -943,9 +983,7 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 	// float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f))
-				* glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f))
-				* glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.model = glm::mat4(1.0f);
 	ubo.view = m_Camera->GetViewMatrix();
 	ubo.proj = m_Camera->GetProjectionMatrix();
 
@@ -955,7 +993,8 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 void Renderer::CreateTextureImage()
 {
 	int width = 0, height = 0, channels = 0;
-	auto imageData = stbi_load("assets/textures/texture.jpg", &width, &height, &channels, STBI_rgb_alpha);
+	const char* texturePath = "assets/textures/checkerboard.png";
+	auto imageData = stbi_load(texturePath, &width, &height, &channels, STBI_rgb_alpha);
 	THROW(!imageData, "Failed to load texutre image data!")
 
 	VkDeviceSize size = width * height * 4;

@@ -1,9 +1,32 @@
 #include "utils/utils.h"
 
+#include <utility>
 #include "core/core.h"
 #include "renderer/device.h"
 
 namespace utils {
+
+std::pair<std::vector<uint32_t>, std::vector<Vertex>> GetModelData(const std::vector<Vertex>& vertices)
+{
+	std::unordered_map<Vertex, uint32_t> vertexLookup{};
+	std::vector<uint32_t> indices{};
+	std::vector<Vertex> uniqueVertices{};
+	uint32_t i = 0;
+
+	for (const auto& vertex : vertices)
+	{
+		if (vertexLookup.count(vertex) == 0)
+		{
+			vertexLookup[vertex] = static_cast<uint32_t>(i);
+			uniqueVertices.push_back(vertex);
+			++i;
+		}
+
+		indices.push_back(vertexLookup[vertex]);
+	}
+
+	return { indices, uniqueVertices };
+}
 
 void CreateImage(uint32_t width,
 	uint32_t height,

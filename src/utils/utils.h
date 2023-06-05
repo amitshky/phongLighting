@@ -1,9 +1,14 @@
 #pragma once
 
+#include <vector>
+#include <unordered_map>
 #include <vulkan/vulkan.h>
+#include "renderer/vertexBuffer.h"
 
 
 namespace utils {
+
+std::pair<std::vector<uint32_t>, std::vector<Vertex>> GetModelData(const std::vector<Vertex>& vertices);
 
 void CreateImage(uint32_t width,
 	uint32_t height,
