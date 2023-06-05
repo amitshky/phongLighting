@@ -203,7 +203,7 @@ void GenerateMipmaps(VkCommandPool commandPool,
 
 	for (uint32_t i = 1; i < mipLevels; ++i)
 	{
-		// trasition the `i - 1` mip level to
+		// transition the `i - 1` mip level to
 		// `VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL`
 		imgBarrier.subresourceRange.baseMipLevel = i - 1;
 		imgBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

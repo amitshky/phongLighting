@@ -959,8 +959,7 @@ void Renderer::CreateTextureImage()
 	THROW(!imageData, "Failed to load texutre image data!")
 
 	VkDeviceSize size = width * height * 4;
-	m_Miplevels = 1;
-	// m_Miplevels = static_cast<uint32_t>(std::log2(std::max(width, height))) + 1;
+	m_Miplevels = static_cast<uint32_t>(std::log2(std::max(width, height))) + 1;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMem;
@@ -977,14 +976,17 @@ void Renderer::CreateTextureImage()
 
 	stbi_image_free(imageData);
 
+	// we generate mipmaps by blitting the image,
+	// this operation is a transfer operation
+	// so we use this image both as a dst and src
 	utils::CreateImage(static_cast<uint32_t>(width),
 		static_cast<uint32_t>(height),
 		m_Miplevels,
 		VK_SAMPLE_COUNT_1_BIT,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
-		// VK_IMAGE_USAGE_TRANSFER_SRC_BIT | // to generate mipmaps
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | // to generate mipmaps
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		m_TextureImage,
 		m_TextureImageMemory);
@@ -1002,13 +1004,7 @@ void Renderer::CreateTextureImage()
 	utils::CopyBufferToImage(
 		m_CommandPool, stagingBuffer, m_TextureImage, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
-	TransitionImageLayout(m_TextureImage,
-		VK_FORMAT_R8G8B8A8_SRGB,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		m_Miplevels);
-
-	// utils::GenerateMipmaps(m_CommandPool, m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, width, height, m_Miplevels);
+	utils::GenerateMipmaps(m_CommandPool, m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, width, height, m_Miplevels);
 
 	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
 	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
