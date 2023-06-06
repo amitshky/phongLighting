@@ -10,7 +10,7 @@
 struct Vertex
 {
 	glm::vec3 pos;
-	glm::vec3 color;
+	glm::vec3 normal;
 	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription GetBindingDescription()
@@ -35,7 +35,7 @@ struct Vertex
 		attrDesc[1].location = 1;
 		attrDesc[1].binding = 0;
 		attrDesc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attrDesc[1].offset = offsetof(Vertex, color);
+		attrDesc[1].offset = offsetof(Vertex, normal);
 		// for texture coordinates
 		attrDesc[2].location = 2;
 		attrDesc[2].binding = 0;
@@ -48,7 +48,7 @@ struct Vertex
 	// for hash function
 	bool operator==(const Vertex& other) const
 	{
-		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+		return pos == other.pos && normal == other.normal && texCoord == other.texCoord;
 	}
 };
 
@@ -59,7 +59,7 @@ struct hash<Vertex>
 {
 	size_t operator()(Vertex const& vertex) const
 	{
-		return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1)
+		return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.normal) << 1)) >> 1)
 			   ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
 	}
 };

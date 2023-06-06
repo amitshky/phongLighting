@@ -17,6 +17,7 @@ public:
 	inline void SetAspectRatio(float aspectRatio) { m_AspectRatio = aspectRatio; }
 	inline glm::mat4 GetViewMatrix() const { return m_ViewMatrix; }
 	inline glm::mat4 GetProjectionMatrix() const { return m_ProjectionMatrix; }
+	inline glm::vec3 GetCameraPosition() const { return m_CameraPos; }
 
 private:
 	bool m_FirstMouseMove = true;

@@ -1,2 +1,2 @@
-glslc assets/shaders/helloTriangle.vert -o assets/shaders/helloTriangle.vert.spv
-glslc assets/shaders/helloTriangle.frag -o assets/shaders/helloTriangle.frag.spv
+glslc assets/shaders/cube.vert -o assets/shaders/cube.vert.spv
+glslc assets/shaders/cube.frag -o assets/shaders/cube.frag.spv

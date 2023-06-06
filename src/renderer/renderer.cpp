@@ -14,57 +14,55 @@
 
 const std::vector<Vertex> vertexData{
   // front
-	{{ -0.5f, 0.5f, 0.5f },    { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 3
-	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }}, // 2
-	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 1
-	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 1
-	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }}, // 0
-	{ { -0.5f, 0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 3
+	{{ -0.5f, 0.5f, 0.5f },    { 0.0f, 0.0f, 1.0f },  { 0.0f, 0.0f }}, // 3
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 0.0f, 1.0f },  { 1.0f, 0.0f }}, // 2
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f },  { 1.0f, 1.0f }}, // 1
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f },  { 1.0f, 1.0f }}, // 1
+	{ { -0.5f, -0.5f, 0.5f },  { 0.0f, 0.0f, 1.0f },  { 0.0f, 1.0f }}, // 0
+	{ { -0.5f, 0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f },  { 0.0f, 0.0f }}, // 3
 
   // right
-	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 2
-	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }}, // 6
-	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
-	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
-	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }}, // 1
-	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 2
+	{ { 0.5f, 0.5f, 0.5f },    { 1.0f, 0.0f, 0.0f },  { 0.0f, 0.0f }}, // 2
+	{ { 0.5f, 0.5f, -0.5f },   { 1.0f, 0.0f, 0.0f },  { 1.0f, 0.0f }}, // 6
+	{ { 0.5f, -0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f },  { 1.0f, 1.0f }}, // 5
+	{ { 0.5f, -0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f },  { 1.0f, 1.0f }}, // 5
+	{ { 0.5f, -0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f },  { 0.0f, 1.0f }}, // 1
+	{ { 0.5f, 0.5f, 0.5f },    { 1.0f, 0.0f, 0.0f },  { 0.0f, 0.0f }}, // 2
 
   // back
-	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 6
-	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }}, // 7
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 4
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 4
-	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }}, // 5
-	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 6
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f }}, // 6
+	{ { -0.5f, 0.5f, -0.5f },  { 0.0f, 0.0f, -1.0f }, { 1.0f, 0.0f }}, // 7
+	{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 1.0f }}, // 4
+	{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 1.0f }}, // 4
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f }}, // 5
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f }}, // 6
 
   // left
-	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
-	{ { -0.5f, 0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }}, // 3
-	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 0
-	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 0
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }}, // 4
-	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+	{ { -0.5f, 0.5f, -0.5f },  { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+	{ { -0.5f, 0.5f, 0.5f },   { -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f }}, // 3
+	{ { -0.5f, -0.5f, 0.5f },  { -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }}, // 0
+	{ { -0.5f, -0.5f, 0.5f },  { -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }}, // 0
+	{ { -0.5f, -0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f }}, // 4
+	{ { -0.5f, 0.5f, -0.5f },  { -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
 
   // top
-	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
-	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }}, // 6
-	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 2
-	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }}, // 2
-	{ { -0.5f, 0.5f, 0.5f },   { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f }}, // 3
-	{ { -0.5f, 0.5f, -0.5f },  { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }}, // 7
+	{ { -0.5f, 0.5f, -0.5f },  { 0.0f, 1.0f, 0.0f },  { 0.0f, 0.0f }}, // 7
+	{ { 0.5f, 0.5f, -0.5f },   { 0.0f, 1.0f, 0.0f },  { 1.0f, 0.0f }}, // 6
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f },  { 1.0f, 1.0f }}, // 2
+	{ { 0.5f, 0.5f, 0.5f },    { 0.0f, 1.0f, 0.0f },  { 1.0f, 1.0f }}, // 2
+	{ { -0.5f, 0.5f, 0.5f },   { 0.0f, 1.0f, 0.0f },  { 0.0f, 1.0f }}, // 3
+	{ { -0.5f, 0.5f, -0.5f },  { 0.0f, 1.0f, 0.0f },  { 0.0f, 0.0f }}, // 7
 
   // bottom
-	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 0
-	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f }}, // 1
-	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
-	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }}, // 5
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }}, // 4
-	{ { -0.5f, -0.5f, 0.5f },  { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }}, // 0
+	{ { -0.5f, -0.5f, 0.5f },  { 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }}, // 0
+	{ { 0.5f, -0.5f, 0.5f },   { 0.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }}, // 1
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }}, // 5
+	{ { 0.5f, -0.5f, -0.5f },  { 0.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }}, // 5
+	{ { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f }, { 0.0f, 1.0f }}, // 4
+	{ { -0.5f, -0.5f, 0.5f },  { 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }}, // 0
 };
 
-auto modelData = utils::GetModelData(vertexData);
-const std::vector<uint32_t> indices = modelData.first;
-const std::vector<Vertex> vertices = modelData.second;
+const auto [indices, vertices] = utils::GetModelData(vertexData);
 
 Renderer::Renderer(const char* title, const VulkanConfig& config, std::shared_ptr<Window> window)
 	: m_Config{ config },
@@ -544,8 +542,8 @@ void Renderer::CreateFramebuffers()
 void Renderer::CreateGraphicsPipeline()
 {
 	// shader stages
-	Shader vertexShader{ "assets/shaders/helloTriangle.vert.spv", ShaderType::VERTEX };
-	Shader fragmentShader{ "assets/shaders/helloTriangle.frag.spv", ShaderType::FRAGMENT };
+	Shader vertexShader{ "assets/shaders/cube.vert.spv", ShaderType::VERTEX };
+	Shader fragmentShader{ "assets/shaders/cube.frag.spv", ShaderType::FRAGMENT };
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{ vertexShader.GetShaderStage(),
 		fragmentShader.GetShaderStage() };
 
@@ -978,12 +976,14 @@ void Renderer::CreateDescriptorSets()
 
 void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 {
-	// static auto startTime = std::chrono::high_resolution_clock::now();
-	// auto currentTime = std::chrono::high_resolution_clock::now();
-	// float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::mat4(1.0f);
+	ubo.viewPos = m_Camera->GetCameraPosition();
+	// ubo.model = glm::mat4(1.0f);
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.view = m_Camera->GetViewMatrix();
 	ubo.proj = m_Camera->GetProjectionMatrix();
 

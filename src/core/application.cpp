@@ -59,6 +59,8 @@ void Application::Run()
 			std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
 		lastFrameTime = currentFrameTime;
 
+		// printf("\r%8.2f", 1 / deltatime);
+
 		m_Renderer->Draw(deltatime);
 		m_Window->OnUpdate();
 		ProcessInput();
