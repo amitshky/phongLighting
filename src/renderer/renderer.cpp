@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include "stb_image/stb_image.h"
 #include "core/core.h"
 #include "renderer/shader.h"
@@ -981,11 +982,12 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
+	ubo.lightPos = glm::vec3(0.0, 0.0, 0.8);
 	ubo.viewPos = m_Camera->GetCameraPosition();
-	// ubo.model = glm::mat4(1.0f);
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.view = m_Camera->GetViewMatrix();
-	ubo.proj = m_Camera->GetProjectionMatrix();
+	ubo.modelMat = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.viewMat = m_Camera->GetViewMatrix();
+	ubo.projMat = m_Camera->GetProjectionMatrix();
+	ubo.normMat = glm::inverseTranspose(ubo.modelMat);
 
 	memcpy(m_UniformBufferMapped[currentFrameIndex], &ubo, sizeof(ubo));
 }
