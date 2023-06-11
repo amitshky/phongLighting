@@ -49,12 +49,7 @@ void Shader::CreateShaderModule()
 void Shader::CreateShaderStage()
 {
 	m_ShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-
-	if (m_Type == ShaderType::VERTEX)
-		m_ShaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	else if (m_Type == ShaderType::FRAGMENT)
-		m_ShaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-
+	m_ShaderStage.stage = static_cast<VkShaderStageFlagBits>(m_Type);
 	m_ShaderStage.module = m_ShaderModule;
 	m_ShaderStage.pName = "main";
 }

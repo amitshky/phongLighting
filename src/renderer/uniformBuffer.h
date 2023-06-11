@@ -2,6 +2,9 @@
 
 #include <glm/glm.hpp>
 
+// TODO: move these to renderer.cpp or somewhere else cuz
+// it is not so general
+
 struct UniformBufferObject
 {
 	// explicitly speicify alignments
@@ -12,10 +15,16 @@ struct UniformBufferObject
 	// vec3 / vec4 = 16bytes
 	// mat4 = 16bytes
 
+	// NOTE: alignas() can be removed in this case because they are all 16bytes
 	alignas(16) glm::vec3 lightPos;
 	alignas(16) glm::vec3 viewPos;
-	alignas(16) glm::mat4 modelMat;
 	alignas(16) glm::mat4 viewMat;
 	alignas(16) glm::mat4 projMat;
-	alignas(16) glm::mat4 normMat; // for normal vector
+	// alignas(16) glm::mat4 normMat; // for normal vector
+};
+
+struct DynamicUniformBufferObject
+{
+	glm::mat4* modelMat = nullptr;
+	// alignas(16) glm::mat4 normMat; // for normal vector
 };

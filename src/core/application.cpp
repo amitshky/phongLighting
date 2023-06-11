@@ -19,6 +19,7 @@ void Application::Init(const char* title)
 
 	m_Window = std::make_shared<Window>(WindowProps{ title });
 	// set window event callbacks
+	// TODO: create only one function that dispatches all the events
 	m_Window->SetCloseEventCallbackFn(BIND_EVENT_FN(Application::OnCloseEvent));
 	m_Window->SetResizeEventCallbackFn(BIND_EVENT_FN(Application::OnResizeEvent));
 	m_Window->SetMouseEventCallbackFn(BIND_EVENT_FN(Application::OnMouseMoveEvent));
@@ -59,7 +60,7 @@ void Application::Run()
 			std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
 		lastFrameTime = currentFrameTime;
 
-		// printf("\r%8.2f", 1 / deltatime);
+		// printf("\r%8d", static_cast<int32_t>(1 / deltatime));
 
 		m_Renderer->Draw(deltatime);
 		m_Window->OnUpdate();

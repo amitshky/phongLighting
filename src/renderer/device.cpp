@@ -47,6 +47,7 @@ void Device::PickPhysicalDevice()
 		if (IsDeviceSuitable(device))
 		{
 			m_PhysicalDevice = device;
+			vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
 			m_MsaaSamples = GetMaxUsableSampleCount();
 			break;
 		}
@@ -54,14 +55,10 @@ void Device::PickPhysicalDevice()
 
 	THROW(m_PhysicalDevice == VK_NULL_HANDLE, "Failed to find a suitable GPU!")
 
-	// we dont need to write this
-	VkPhysicalDeviceProperties physicalDeviceProperties;
-	vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
-
 	Logger::Info(
 		"Physical device info:\n"
 		"    Device name: {}\n",
-		physicalDeviceProperties.deviceName);
+		m_PhysicalDeviceProperties.deviceName);
 }
 
 void Device::CreateLogicalDevice()
@@ -157,11 +154,8 @@ bool Device::CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice)
 
 VkSampleCountFlagBits Device::GetMaxUsableSampleCount()
 {
-	VkPhysicalDeviceProperties physicalDeviceProperties;
-	vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
-
-	VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts
-								& physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+	VkSampleCountFlags counts = m_PhysicalDeviceProperties.limits.framebufferColorSampleCounts
+								& m_PhysicalDeviceProperties.limits.framebufferDepthSampleCounts;
 
 	if (counts & VK_SAMPLE_COUNT_64_BIT)
 		return VK_SAMPLE_COUNT_64_BIT;

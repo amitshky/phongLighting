@@ -3,6 +3,7 @@
 #include <array>
 #include <numeric>
 #include <chrono>
+#include <cstdlib>
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,6 +13,8 @@
 #include "renderer/shader.h"
 #include "utils/utils.h"
 
+
+constexpr uint64_t NUM_CUBES = 2ull;
 
 const std::vector<Vertex> vertexData{
   // front
@@ -90,7 +93,9 @@ void Renderer::Init(const char* title)
 	CreateDepthResource();
 	CreateFramebuffers();
 
+	// NOTE: abstract descriptor set layout and pool together maybe
 	CreateDescriptorSetLayout();
+	CreateDescriptorPool();
 	CreateGraphicsPipeline();
 
 	CreateCommandPool();
@@ -106,7 +111,6 @@ void Renderer::Init(const char* title)
 	CreateTextureSampler();
 
 	CreateUniformBuffers();
-	CreateDescriptorPool();
 	CreateDescriptorSets();
 
 	m_Camera = std::make_unique<Camera>(
@@ -122,12 +126,18 @@ void Renderer::Terminate()
 	vkFreeMemory(Device::GetDevice(), m_TextureImageMemory, nullptr);
 	vkDestroyImage(Device::GetDevice(), m_TextureImage, nullptr);
 
+	_aligned_free(m_DUbo.modelMat);
+
 	vkDestroyDescriptorPool(Device::GetDevice(), m_DescriptorPool, nullptr);
 	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
 		vkUnmapMemory(Device::GetDevice(), m_UniformBufferMemory[i]);
 		vkFreeMemory(Device::GetDevice(), m_UniformBufferMemory[i], nullptr);
 		vkDestroyBuffer(Device::GetDevice(), m_UniformBuffers[i], nullptr);
+
+		vkUnmapMemory(Device::GetDevice(), m_DynamicUniformBufferMemory[i]);
+		vkFreeMemory(Device::GetDevice(), m_DynamicUniformBufferMemory[i], nullptr);
+		vkDestroyBuffer(Device::GetDevice(), m_DynamicUniformBuffers[i], nullptr);
 	}
 	vkDestroyDescriptorSetLayout(Device::GetDevice(), m_DescriptorSetLayout, nullptr);
 
@@ -645,7 +655,6 @@ void Renderer::CreateGraphicsPipeline()
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
-	// push constants are another way of passing dynamic values to the shaders
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -751,16 +760,21 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	VkDeviceSize offsets[]{ 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdBindDescriptorSets(commandBuffer,
-		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_PipelineLayout,
-		0,
-		1,
-		&m_DescriptorSets[m_CurrentFrameIndex],
-		0,
-		nullptr);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	for (uint64_t i = 0; i < NUM_CUBES; ++i)
+	{
+		uint32_t dynamicOffset = i * m_AlignmentSize;
+		vkCmdBindDescriptorSets(commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_PipelineLayout,
+			0,
+			1,
+			&m_DescriptorSets[m_CurrentFrameIndex],
+			1,
+			&dynamicOffset);
+
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	}
 
 	vkCmdEndRenderPass(commandBuffer);
 	THROW(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS, "Failed to record command buffer!");
@@ -860,16 +874,23 @@ void Renderer::CreateDescriptorSetLayout()
 	uboLayout.descriptorCount = 1;
 	uboLayout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	uboLayout.pImmutableSamplers = nullptr;
+	// dynamic ubo for per-object data
+	VkDescriptorSetLayoutBinding dUboLayout{};
+	dUboLayout.binding = 1; // binding in the shader
+	dUboLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	dUboLayout.descriptorCount = 1;
+	dUboLayout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	dUboLayout.pImmutableSamplers = nullptr;
 
 	// combined image sampler // for textures
 	VkDescriptorSetLayoutBinding imgSamplerLayout{};
-	imgSamplerLayout.binding = 1; // binding in the shader
+	imgSamplerLayout.binding = 2; // binding in the shader
 	imgSamplerLayout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	imgSamplerLayout.descriptorCount = 1;
 	imgSamplerLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	imgSamplerLayout.pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings{ uboLayout, imgSamplerLayout };
+	std::array<VkDescriptorSetLayoutBinding, 3> bindings{ uboLayout, dUboLayout, imgSamplerLayout };
 
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
 	descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -881,35 +902,18 @@ void Renderer::CreateDescriptorSetLayout()
 		"Failed to create descriptor set layout!");
 }
 
-void Renderer::CreateUniformBuffers()
-{
-	VkDeviceSize size = static_cast<uint64_t>(sizeof(UniformBufferObject));
-
-	m_UniformBuffers.resize(m_Config.maxFramesInFlight);
-	m_UniformBufferMemory.resize(m_Config.maxFramesInFlight);
-	m_UniformBufferMapped.resize(m_Config.maxFramesInFlight);
-
-	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
-	{
-		utils::CreateBuffer(size,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			m_UniformBuffers[i],
-			m_UniformBufferMemory[i]);
-
-		vkMapMemory(Device::GetDevice(), m_UniformBufferMemory[i], 0, size, 0, &m_UniformBufferMapped[i]);
-	}
-}
-
 void Renderer::CreateDescriptorPool()
 {
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};
+	std::array<VkDescriptorPoolSize, 3> poolSizes{};
 	// uniform buffer
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(m_Config.maxFramesInFlight);
-	// combined image sampler // for textures
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	// dynamic uniform buffer // for per-object data
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	poolSizes[1].descriptorCount = static_cast<uint32_t>(m_Config.maxFramesInFlight);
+	// combined image sampler // for textures
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[2].descriptorCount = static_cast<uint32_t>(m_Config.maxFramesInFlight);
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo{};
 	descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -919,6 +923,48 @@ void Renderer::CreateDescriptorPool()
 
 	THROW(vkCreateDescriptorPool(Device::GetDevice(), &descriptorPoolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS,
 		"Failed to create descriptor pool!");
+}
+
+void Renderer::CreateUniformBuffers()
+{
+	VkDeviceSize minAlignment = Device::GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
+	m_AlignmentSize = sizeof(glm::mat4);
+	if (minAlignment > 0ull)
+	{
+		// return value greater than `minAlignment - 1`
+		m_AlignmentSize = (m_AlignmentSize + minAlignment - 1) & ~(minAlignment - 1);
+	}
+
+	VkDeviceSize uboSize = static_cast<uint64_t>(sizeof(UniformBufferObject));
+	VkDeviceSize dUboSize = NUM_CUBES * m_AlignmentSize;
+
+	m_DUbo.modelMat = static_cast<glm::mat4*>(_aligned_malloc(dUboSize, m_AlignmentSize));
+
+	m_UniformBuffers.resize(m_Config.maxFramesInFlight);
+	m_UniformBufferMemory.resize(m_Config.maxFramesInFlight);
+	m_UniformBufferMapped.resize(m_Config.maxFramesInFlight);
+
+	m_DynamicUniformBuffers.resize(m_Config.maxFramesInFlight);
+	m_DynamicUniformBufferMemory.resize(m_Config.maxFramesInFlight);
+	m_DynamicUniformBufferMapped.resize(m_Config.maxFramesInFlight);
+
+	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
+	{
+		utils::CreateBuffer(uboSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_UniformBuffers[i],
+			m_UniformBufferMemory[i]);
+		vkMapMemory(Device::GetDevice(), m_UniformBufferMemory[i], 0, uboSize, 0, &m_UniformBufferMapped[i]);
+
+		utils::CreateBuffer(dUboSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_DynamicUniformBuffers[i],
+			m_DynamicUniformBufferMemory[i]);
+		vkMapMemory(
+			Device::GetDevice(), m_DynamicUniformBufferMemory[i], 0, dUboSize, 0, &m_DynamicUniformBufferMapped[i]);
+	}
 }
 
 void Renderer::CreateDescriptorSets()
@@ -945,13 +991,18 @@ void Renderer::CreateDescriptorSets()
 		descriptorBufferInfo.buffer = m_UniformBuffers[i];
 		descriptorBufferInfo.offset = 0;
 		descriptorBufferInfo.range = sizeof(UniformBufferObject);
+		// for dynamic ubo
+		VkDescriptorBufferInfo dynamicDescriptorBufferInfo{};
+		dynamicDescriptorBufferInfo.buffer = m_DynamicUniformBuffers[i];
+		dynamicDescriptorBufferInfo.offset = 0;
+		dynamicDescriptorBufferInfo.range = m_AlignmentSize;
 		// combined image sampler // for textures
 		VkDescriptorImageInfo descriptorImageInfo{};
 		descriptorImageInfo.sampler = m_TextureSampler;
 		descriptorImageInfo.imageView = m_TextureImageView;
 		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+		std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 		// uniform buffer
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = m_DescriptorSets[i];
@@ -960,14 +1011,22 @@ void Renderer::CreateDescriptorSets()
 		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		descriptorWrites[0].descriptorCount = 1;
 		descriptorWrites[0].pBufferInfo = &descriptorBufferInfo;
-		// combined image sampler // for textures
+		// for dynamic ubo
 		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[1].dstSet = m_DescriptorSets[i];
 		descriptorWrites[1].dstBinding = 1;
 		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &descriptorImageInfo;
+		descriptorWrites[1].pBufferInfo = &dynamicDescriptorBufferInfo;
+		// combined image sampler // for textures
+		descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[2].dstSet = m_DescriptorSets[i];
+		descriptorWrites[2].dstBinding = 2;
+		descriptorWrites[2].dstArrayElement = 0;
+		descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[2].descriptorCount = 1;
+		descriptorWrites[2].pImageInfo = &descriptorImageInfo;
 
 		// updates the configurations of the descriptor sets
 		vkUpdateDescriptorSets(
@@ -981,15 +1040,20 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	UniformBufferObject ubo{};
-	ubo.lightPos = glm::vec3(0.0, 0.0, 0.8);
-	ubo.viewPos = m_Camera->GetCameraPosition();
-	ubo.modelMat = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.viewMat = m_Camera->GetViewMatrix();
-	ubo.projMat = m_Camera->GetProjectionMatrix();
-	ubo.normMat = glm::inverseTranspose(ubo.modelMat);
+	m_Ubo.lightPos = glm::vec3(0.0, 0.0, 0.8);
+	m_Ubo.viewPos = m_Camera->GetCameraPosition();
+	m_Ubo.viewMat = m_Camera->GetViewMatrix();
+	m_Ubo.projMat = m_Camera->GetProjectionMatrix();
+	memcpy(m_UniformBufferMapped[currentFrameIndex], &m_Ubo, sizeof(m_Ubo));
 
-	memcpy(m_UniformBufferMapped[currentFrameIndex], &ubo, sizeof(ubo));
+	glm::mat4* modelMatPtr = (glm::mat4*)((uint64_t)(m_DUbo.modelMat) + (0 * m_AlignmentSize));
+	*modelMatPtr = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	modelMatPtr = (glm::mat4*)((uint64_t)(m_DUbo.modelMat) + (1 * m_AlignmentSize));
+	*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f))
+				   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+	// m_DUbo.normMat = glm::inverseTranspose(ubo.modelMat); // 4x4, converted to 3x3 in the vertex shader
+	memcpy(m_DynamicUniformBufferMapped[currentFrameIndex], m_DUbo.modelMat, NUM_CUBES * m_AlignmentSize);
 }
 
 void Renderer::CreateTextureImage()
@@ -1059,8 +1123,7 @@ void Renderer::CreateTextureImageView()
 
 void Renderer::CreateTextureSampler()
 {
-	VkPhysicalDeviceProperties devProp;
-	vkGetPhysicalDeviceProperties(Device::GetPhysicalDevice(), &devProp);
+	VkPhysicalDeviceProperties devProp = Device::GetDeviceProperties();
 
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

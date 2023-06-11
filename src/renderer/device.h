@@ -33,6 +33,8 @@ public:
 	static inline VkDevice GetDevice() { return s_Instance->m_DeviceVk; }
 	static inline VkPhysicalDevice GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
 
+	static inline VkPhysicalDeviceProperties GetDeviceProperties() { return s_Instance->m_PhysicalDeviceProperties; }
+
 	static inline VkQueue GetGraphicsQueue() { return s_Instance->m_GraphicsQueue; }
 	static inline VkQueue GetPresentQueue() { return s_Instance->m_PresentQueue; }
 	static inline VkSampleCountFlagBits GetMSAASamplesCount() { return s_Instance->m_MsaaSamples; }
@@ -69,6 +71,8 @@ private:
 
 	VkPhysicalDevice m_PhysicalDevice;
 	VkDevice m_DeviceVk;
+
+	VkPhysicalDeviceProperties m_PhysicalDeviceProperties;
 
 	VkQueue m_GraphicsQueue;
 	VkQueue m_PresentQueue;

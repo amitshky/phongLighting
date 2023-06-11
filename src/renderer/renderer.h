@@ -58,8 +58,8 @@ private:
 
 	// uniform buffer
 	void CreateDescriptorSetLayout();
-	void CreateUniformBuffers();
 	void CreateDescriptorPool();
+	void CreateUniformBuffers();
 	void CreateDescriptorSets();
 	void UpdateUniformBuffer(uint32_t currentFrameIndex);
 
@@ -129,6 +129,12 @@ private:
 	std::vector<VkBuffer> m_UniformBuffers;
 	std::vector<VkDeviceMemory> m_UniformBufferMemory;
 	std::vector<void*> m_UniformBufferMapped;
+	VkDeviceSize m_AlignmentSize;
+	std::vector<VkBuffer> m_DynamicUniformBuffers;
+	std::vector<VkDeviceMemory> m_DynamicUniformBufferMemory;
+	std::vector<void*> m_DynamicUniformBufferMapped;
+	UniformBufferObject m_Ubo{};
+	DynamicUniformBufferObject m_DUbo{};
 
 	// textures
 	VkImage m_TextureImage;
