@@ -125,8 +125,6 @@ void Renderer::Terminate()
 	vkFreeMemory(Device::GetDevice(), m_TextureImageMemory, nullptr);
 	vkDestroyImage(Device::GetDevice(), m_TextureImage, nullptr);
 
-	m_DUbo.Cleanup();
-
 	vkDestroyDescriptorPool(Device::GetDevice(), m_DescriptorPool, nullptr);
 	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
@@ -1043,13 +1041,14 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)
 	{
 		// get a pointer to the aligned offset
-		glm::mat4* modelMatPtr = m_DUbo[i];
+		glm::mat4* modelMatPtr = m_DUbo.GetModelMatPtr(i);
 		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f))
 					   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
+		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4, converted to 3x3 in the vertex shader
 	}
 
-	// m_DUbo.normMat = glm::inverseTranspose(ubo.modelMat); // 4x4, converted to 3x3 in the vertex shader
-	memcpy(m_DynamicUniformBufferMapped[currentFrameIndex], m_DUbo.modelMat, m_DUbo.GetBufferSize());
+	memcpy(m_DynamicUniformBufferMapped[currentFrameIndex], m_DUbo.buffer, m_DUbo.GetBufferSize());
 }
 
 void Renderer::CreateTextureImage()

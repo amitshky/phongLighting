@@ -15,42 +15,59 @@ struct UniformBufferObject
 	// vec3 / vec4 = 16bytes
 	// mat4 = 16bytes
 
-	// NOTE: alignas() can be removed in this case because they are all 16bytes
 	alignas(16) glm::vec3 lightPos;
 	alignas(16) glm::vec3 viewPos;
 	alignas(16) glm::mat4 viewMat;
 	alignas(16) glm::mat4 projMat;
-	// alignas(16) glm::mat4 normMat; // for normal vector
 };
 
 struct DynamicUniformBufferObject
 {
 public:
-	glm::mat4* modelMat = nullptr;
-	// glm::mat4 normMat; // for normal vector
+	// the buffer contains model and normal matrices
+	// they are aligned one after another in the memory
+	// the buffer is allocated using `_aligned_malloc`
+	// eg if alignment is 256bytes (sizeof(glm::mat4) = 64bytes):
+	// |---model---|---normal---|--------|--------|
+	glm::mat4* buffer = nullptr;
 
 public:
+	~DynamicUniformBufferObject() { Cleanup(); }
+
 	void Init(uint64_t minAlignmentSize, const uint64_t numCubes)
 	{
-		m_AlignmentSize = sizeof(glm::mat4);
+		m_AlignmentSize = sizeof(glm::mat4) * 2; // size of model and normal matrices
 		if (minAlignmentSize > 0)
 		{
-			// return value greater than `minAlignmentSize - 1`
+			// returns value greater than `minAlignmentSize - 1` and greater or equal to `m_AlignmentSize`, and is a
+			// power of 2
 			m_AlignmentSize = (m_AlignmentSize + minAlignmentSize - 1) & ~(minAlignmentSize - 1);
 		}
 
 		m_Size = numCubes * m_AlignmentSize;
-		modelMat = static_cast<glm::mat4*>(_aligned_malloc(m_Size, m_AlignmentSize));
+		buffer = static_cast<glm::mat4*>(_aligned_malloc(m_Size, m_AlignmentSize));
 	}
 
-	void Cleanup() { _aligned_free(modelMat); }
+	void Cleanup()
+	{
+		if (buffer == nullptr)
+			return;
+
+		_aligned_free(buffer);
+		buffer = nullptr;
+	}
 
 	inline const uint64_t GetBufferSize() const { return m_Size; }
 	inline const uint64_t GetAlignment() const { return m_AlignmentSize; }
 
-	glm::mat4* operator[](uint64_t index) const
+	inline glm::mat4* GetModelMatPtr(uint64_t index) const
 	{
-		return reinterpret_cast<glm::mat4*>(reinterpret_cast<uint64_t>(modelMat) + (index * m_AlignmentSize));
+		return reinterpret_cast<glm::mat4*>(reinterpret_cast<uint64_t>(buffer) + (index * m_AlignmentSize));
+	}
+	inline glm::mat4* GetNormalMatPtr(uint64_t index) const
+	{
+		return reinterpret_cast<glm::mat4*>(
+			reinterpret_cast<uint64_t>(buffer) + sizeof(glm::mat4) + (index * m_AlignmentSize));
 	}
 
 private:

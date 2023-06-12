@@ -6,12 +6,12 @@ layout(binding = 0) uniform UniformBufferObject
 	vec3 viewPos;
 	mat4 view;
 	mat4 proj;
-	// mat4 normMat;
 }
 ubo;
 layout(binding = 1) uniform DynamicUniformBufferObject
 {
-	mat4 model;
+	mat4 modelMat;
+	mat4 normMat;
 }
 dUbo;
 
@@ -27,16 +27,15 @@ layout(location = 4) out vec3 outLightPos;
 
 void main()
 {
-	gl_Position = ubo.proj * ubo.view * dUbo.model * vec4(inPosition, 1.0);
+	gl_Position = ubo.proj * ubo.view * dUbo.modelMat * vec4(inPosition, 1.0);
 
 	// we cannot simply multiply the normal vector by the model matrix,
 	// because we shouldnt translate the normal vector
 	// we use a normal matrix
-	outNormal = mat3(transpose(inverse(dUbo.model))) * inNormal;
-	// outNormal = mat3(ubo.normMat) * inNormal;
+	outNormal = mat3(dUbo.normMat) * inNormal;
 
 	outTexCoord = inTexCoord;
-	outFragPos = vec3(dUbo.model * vec4(inPosition, 1.0));
+	outFragPos = vec3(dUbo.modelMat * vec4(inPosition, 1.0));
 	outViewPos = ubo.viewPos;
 	outLightPos = ubo.lightPos;
 }
