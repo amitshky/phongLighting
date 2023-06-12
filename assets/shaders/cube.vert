@@ -4,8 +4,7 @@ layout(binding = 0) uniform UniformBufferObject
 {
 	vec3 lightPos;
 	vec3 viewPos;
-	mat4 view;
-	mat4 proj;
+	mat4 viewProjMat;
 }
 ubo;
 layout(binding = 1) uniform DynamicUniformBufferObject
@@ -27,7 +26,7 @@ layout(location = 4) out vec3 outLightPos;
 
 void main()
 {
-	gl_Position = ubo.proj * ubo.view * dUbo.modelMat * vec4(inPosition, 1.0);
+	gl_Position = ubo.viewProjMat * dUbo.modelMat * vec4(inPosition, 1.0);
 
 	// we cannot simply multiply the normal vector by the model matrix,
 	// because we shouldnt translate the normal vector

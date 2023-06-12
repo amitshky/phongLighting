@@ -17,18 +17,21 @@ struct UniformBufferObject
 
 	alignas(16) glm::vec3 lightPos;
 	alignas(16) glm::vec3 viewPos;
-	alignas(16) glm::mat4 viewMat;
-	alignas(16) glm::mat4 projMat;
+	alignas(16) glm::mat4 viewProjMat;
 };
 
-struct DynamicUniformBufferObject
+class DynamicUniformBufferObject
 {
 public:
 	// the buffer contains model and normal matrices
 	// they are aligned one after another in the memory
 	// the buffer is allocated using `_aligned_malloc`
-	// eg if alignment is 256bytes (sizeof(glm::mat4) = 64bytes):
-	// |---model---|---normal---|--------|--------|
+	// each of the alignments are bound one at a time
+	// so only one model and normal matrix is sent to the shader
+	// eg if alignment is 256bytes (and sizeof(glm::mat4) = 64bytes):
+	// |---model-1---|---normal-1--|-------------|-------------|
+	// |---model-2---|---normal-2--|-------------|-------------|
+	// |---model-3---|---normal-3--|-------------|-------------|
 	glm::mat4* buffer = nullptr;
 
 public:

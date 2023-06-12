@@ -1034,8 +1034,7 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 
 	m_Ubo.lightPos = glm::vec3(0.0, 0.0, 0.8);
 	m_Ubo.viewPos = m_Camera->GetCameraPosition();
-	m_Ubo.viewMat = m_Camera->GetViewMatrix();
-	m_Ubo.projMat = m_Camera->GetProjectionMatrix();
+	m_Ubo.viewProjMat = m_Camera->GetViewProjectionMatrix();
 	memcpy(m_UniformBufferMapped[currentFrameIndex], &m_Ubo, sizeof(m_Ubo));
 
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)

@@ -31,7 +31,8 @@ Camera::Camera(float aspectRatio)
 	  m_ZNear{ g_ZNear },
 	  m_ZFar{ g_ZFar },
 	  m_ViewMatrix{},
-	  m_ProjectionMatrix{}
+	  m_ProjectionMatrix{},
+	  m_ViewProjectionMatrix{}
 {}
 
 void Camera::OnUpdate(float deltatime)
@@ -40,6 +41,7 @@ void Camera::OnUpdate(float deltatime)
 	m_ProjectionMatrix = glm::perspective(m_FOVy, m_AspectRatio, m_ZNear, m_ZFar);
 	// glm was designed for opengl where the y-coord for clip coordinate is flipped
 	m_ProjectionMatrix[1][1] *= -1;
+	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 
 	// movement
 	const float cameraSpeed = 3.0f * deltatime;
