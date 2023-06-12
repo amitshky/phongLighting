@@ -25,6 +25,35 @@ struct UniformBufferObject
 
 struct DynamicUniformBufferObject
 {
+public:
 	glm::mat4* modelMat = nullptr;
-	// alignas(16) glm::mat4 normMat; // for normal vector
+	// glm::mat4 normMat; // for normal vector
+
+public:
+	void Init(uint64_t minAlignmentSize, const uint64_t numCubes)
+	{
+		m_AlignmentSize = sizeof(glm::mat4);
+		if (minAlignmentSize > 0)
+		{
+			// return value greater than `minAlignmentSize - 1`
+			m_AlignmentSize = (m_AlignmentSize + minAlignmentSize - 1) & ~(minAlignmentSize - 1);
+		}
+
+		m_Size = numCubes * m_AlignmentSize;
+		modelMat = static_cast<glm::mat4*>(_aligned_malloc(m_Size, m_AlignmentSize));
+	}
+
+	void Cleanup() { _aligned_free(modelMat); }
+
+	inline const uint64_t GetBufferSize() const { return m_Size; }
+	inline const uint64_t GetAlignment() const { return m_AlignmentSize; }
+
+	glm::mat4* operator[](uint64_t index) const
+	{
+		return reinterpret_cast<glm::mat4*>(reinterpret_cast<uint64_t>(modelMat) + (index * m_AlignmentSize));
+	}
+
+private:
+	uint64_t m_AlignmentSize = 0;
+	uint64_t m_Size = 0;
 };

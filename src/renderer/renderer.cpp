@@ -3,7 +3,6 @@
 #include <array>
 #include <numeric>
 #include <chrono>
-#include <cstdlib>
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,7 +13,7 @@
 #include "utils/utils.h"
 
 
-constexpr uint64_t NUM_CUBES = 2ull;
+constexpr uint64_t NUM_CUBES = 3;
 
 const std::vector<Vertex> vertexData{
   // front
@@ -126,7 +125,7 @@ void Renderer::Terminate()
 	vkFreeMemory(Device::GetDevice(), m_TextureImageMemory, nullptr);
 	vkDestroyImage(Device::GetDevice(), m_TextureImage, nullptr);
 
-	_aligned_free(m_DUbo.modelMat);
+	m_DUbo.Cleanup();
 
 	vkDestroyDescriptorPool(Device::GetDevice(), m_DescriptorPool, nullptr);
 	for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
@@ -763,7 +762,7 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)
 	{
-		uint32_t dynamicOffset = i * m_AlignmentSize;
+		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
 		vkCmdBindDescriptorSets(commandBuffer,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			m_PipelineLayout,
@@ -927,18 +926,9 @@ void Renderer::CreateDescriptorPool()
 
 void Renderer::CreateUniformBuffers()
 {
-	VkDeviceSize minAlignment = Device::GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
-	m_AlignmentSize = sizeof(glm::mat4);
-	if (minAlignment > 0ull)
-	{
-		// return value greater than `minAlignment - 1`
-		m_AlignmentSize = (m_AlignmentSize + minAlignment - 1) & ~(minAlignment - 1);
-	}
-
 	VkDeviceSize uboSize = static_cast<uint64_t>(sizeof(UniformBufferObject));
-	VkDeviceSize dUboSize = NUM_CUBES * m_AlignmentSize;
-
-	m_DUbo.modelMat = static_cast<glm::mat4*>(_aligned_malloc(dUboSize, m_AlignmentSize));
+	VkDeviceSize minAlignment = Device::GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
+	m_DUbo.Init(minAlignment, NUM_CUBES);
 
 	m_UniformBuffers.resize(m_Config.maxFramesInFlight);
 	m_UniformBufferMemory.resize(m_Config.maxFramesInFlight);
@@ -957,13 +947,17 @@ void Renderer::CreateUniformBuffers()
 			m_UniformBufferMemory[i]);
 		vkMapMemory(Device::GetDevice(), m_UniformBufferMemory[i], 0, uboSize, 0, &m_UniformBufferMapped[i]);
 
-		utils::CreateBuffer(dUboSize,
+		utils::CreateBuffer(m_DUbo.GetBufferSize(),
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			m_DynamicUniformBuffers[i],
 			m_DynamicUniformBufferMemory[i]);
-		vkMapMemory(
-			Device::GetDevice(), m_DynamicUniformBufferMemory[i], 0, dUboSize, 0, &m_DynamicUniformBufferMapped[i]);
+		vkMapMemory(Device::GetDevice(),
+			m_DynamicUniformBufferMemory[i],
+			0,
+			m_DUbo.GetBufferSize(),
+			0,
+			&m_DynamicUniformBufferMapped[i]);
 	}
 }
 
@@ -995,7 +989,7 @@ void Renderer::CreateDescriptorSets()
 		VkDescriptorBufferInfo dynamicDescriptorBufferInfo{};
 		dynamicDescriptorBufferInfo.buffer = m_DynamicUniformBuffers[i];
 		dynamicDescriptorBufferInfo.offset = 0;
-		dynamicDescriptorBufferInfo.range = m_AlignmentSize;
+		dynamicDescriptorBufferInfo.range = m_DUbo.GetAlignment();
 		// combined image sampler // for textures
 		VkDescriptorImageInfo descriptorImageInfo{};
 		descriptorImageInfo.sampler = m_TextureSampler;
@@ -1046,14 +1040,16 @@ void Renderer::UpdateUniformBuffer(uint32_t currentFrameIndex)
 	m_Ubo.projMat = m_Camera->GetProjectionMatrix();
 	memcpy(m_UniformBufferMapped[currentFrameIndex], &m_Ubo, sizeof(m_Ubo));
 
-	glm::mat4* modelMatPtr = (glm::mat4*)((uint64_t)(m_DUbo.modelMat) + (0 * m_AlignmentSize));
-	*modelMatPtr = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	modelMatPtr = (glm::mat4*)((uint64_t)(m_DUbo.modelMat) + (1 * m_AlignmentSize));
-	*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f))
-				   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	for (uint64_t i = 0; i < NUM_CUBES; ++i)
+	{
+		// get a pointer to the aligned offset
+		glm::mat4* modelMatPtr = m_DUbo[i];
+		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f))
+					   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	}
 
 	// m_DUbo.normMat = glm::inverseTranspose(ubo.modelMat); // 4x4, converted to 3x3 in the vertex shader
-	memcpy(m_DynamicUniformBufferMapped[currentFrameIndex], m_DUbo.modelMat, NUM_CUBES * m_AlignmentSize);
+	memcpy(m_DynamicUniformBufferMapped[currentFrameIndex], m_DUbo.modelMat, m_DUbo.GetBufferSize());
 }
 
 void Renderer::CreateTextureImage()
