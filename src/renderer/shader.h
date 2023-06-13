@@ -4,7 +4,8 @@
 #include <vulkan/vulkan.h>
 
 
-enum class ShaderType {
+enum class ShaderType
+{
 	VERTEX = VK_SHADER_STAGE_VERTEX_BIT,
 	FRAGMENT = VK_SHADER_STAGE_FRAGMENT_BIT,
 	COMPUTE = VK_SHADER_STAGE_COMPUTE_BIT

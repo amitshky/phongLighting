@@ -23,8 +23,8 @@ void CreateImage(uint32_t width,
 
 VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t miplevels);
 
-VkCommandBuffer BeginSingleTimeCommands(VkCommandPool commandPool);
-void EndSingleTimeCommands(VkCommandPool commandPool, VkCommandBuffer cmdBuff);
+VkCommandBuffer BeginSingleTimeCommands();
+void EndSingleTimeCommands(VkCommandBuffer cmdBuff);
 
 void CreateBuffer(VkDeviceSize size,
 	VkBufferUsageFlags usage,
@@ -32,14 +32,15 @@ void CreateBuffer(VkDeviceSize size,
 	VkBuffer& buffer,
 	VkDeviceMemory& bufferMemory);
 
-void CopyBuffer(VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-void CopyBufferToImage(VkCommandPool commandPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-void GenerateMipmaps(VkCommandPool commandPool,
-	VkImage image,
+void GenerateMipmaps(VkImage image, VkFormat format, int32_t width, int32_t height, uint32_t mipLevels);
+
+void TransitionImageLayout(VkImage image,
 	VkFormat format,
-	int32_t width,
-	int32_t height,
-	uint32_t mipLevels);
+	VkImageLayout oldLayout,
+	VkImageLayout newLayout,
+	uint32_t miplevels);
 
 } // namespace utils

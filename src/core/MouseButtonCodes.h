@@ -1,6 +1,7 @@
 #pragma once
 
-enum Mouse : int {
+enum Mouse : int
+{
 	// From glfw3.h
 	BUTTON_1 = 0,
 	BUTTON_2 = 1,

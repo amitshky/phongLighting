@@ -3,6 +3,7 @@
 #include <utility>
 #include "core/core.h"
 #include "renderer/device.h"
+#include "renderer/commandPool.h"
 
 namespace utils {
 
@@ -121,12 +122,12 @@ void CreateBuffer(VkDeviceSize size,
 	vkBindBufferMemory(Device::GetDevice(), buffer, bufferMemory, 0);
 }
 
-VkCommandBuffer BeginSingleTimeCommands(VkCommandPool commandPool)
+VkCommandBuffer BeginSingleTimeCommands()
 {
 	VkCommandBufferAllocateInfo cmdBuffAllocInfo{};
 	cmdBuffAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	cmdBuffAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cmdBuffAllocInfo.commandPool = commandPool;
+	cmdBuffAllocInfo.commandPool = CommandPool::Get();
 	cmdBuffAllocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer cmdBuff;
@@ -142,7 +143,7 @@ VkCommandBuffer BeginSingleTimeCommands(VkCommandPool commandPool)
 	return cmdBuff;
 }
 
-void EndSingleTimeCommands(VkCommandPool commandPool, VkCommandBuffer cmdBuff)
+void EndSingleTimeCommands(VkCommandBuffer cmdBuff)
 {
 	vkEndCommandBuffer(cmdBuff);
 
@@ -155,12 +156,12 @@ void EndSingleTimeCommands(VkCommandPool commandPool, VkCommandBuffer cmdBuff)
 	vkQueueSubmit(Device::GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(Device::GetGraphicsQueue());
 
-	vkFreeCommandBuffers(Device::GetDevice(), commandPool, 1, &cmdBuff);
+	vkFreeCommandBuffers(Device::GetDevice(), CommandPool::Get(), 1, &cmdBuff);
 }
 
-void CopyBuffer(VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands();
 
 	VkBufferCopy copyRegion{};
 	copyRegion.srcOffset = 0;
@@ -169,12 +170,12 @@ void CopyBuffer(VkCommandPool commandPool, VkBuffer srcBuffer, VkBuffer dstBuffe
 	// transfer the contents of the buffers
 	vkCmdCopyBuffer(cmdBuff, srcBuffer, dstBuffer, 1, &copyRegion);
 
-	EndSingleTimeCommands(commandPool, cmdBuff);
+	EndSingleTimeCommands(cmdBuff);
 }
 
-void CopyBufferToImage(VkCommandPool commandPool, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 {
-	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands();
 
 	// specify which part of the buffer is going to be copied to which part of the image
 	VkBufferImageCopy region{};
@@ -191,15 +192,10 @@ void CopyBufferToImage(VkCommandPool commandPool, VkBuffer buffer, VkImage image
 
 	vkCmdCopyBufferToImage(cmdBuff, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	EndSingleTimeCommands(commandPool, cmdBuff);
+	EndSingleTimeCommands(cmdBuff);
 }
 
-void GenerateMipmaps(VkCommandPool commandPool,
-	VkImage image,
-	VkFormat format,
-	int32_t width,
-	int32_t height,
-	uint32_t mipLevels)
+void GenerateMipmaps(VkImage image, VkFormat format, int32_t width, int32_t height, uint32_t mipLevels)
 {
 	// TODO: load mipmaps from a file instead of generating them
 
@@ -209,7 +205,7 @@ void GenerateMipmaps(VkCommandPool commandPool,
 	THROW(!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT),
 		"Texture image format does not support linear blitting!");
 
-	VkCommandBuffer cmdBuff = BeginSingleTimeCommands(commandPool);
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands();
 
 	VkImageMemoryBarrier imgBarrier{};
 	imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -320,7 +316,56 @@ void GenerateMipmaps(VkCommandPool commandPool,
 		1,
 		&imgBarrier);
 
-	EndSingleTimeCommands(commandPool, cmdBuff);
+	EndSingleTimeCommands(cmdBuff);
+}
+
+void TransitionImageLayout(VkImage image,
+	VkFormat format,
+	VkImageLayout oldLayout,
+	VkImageLayout newLayout,
+	uint32_t miplevels)
+{
+	VkCommandBuffer cmdBuff = BeginSingleTimeCommands();
+
+	VkPipelineStageFlags srcStage;
+	VkPipelineStageFlags dstStage;
+
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = miplevels;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		barrier.srcAccessMask = 0; // operation before the barrier
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // operation after the barrier
+
+		srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else
+	{
+		LOG_AND_THROW("Unsupported layout transition!");
+	}
+
+	vkCmdPipelineBarrier(cmdBuff, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+	EndSingleTimeCommands(cmdBuff);
 }
 
 } // namespace utils

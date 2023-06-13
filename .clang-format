@@ -25,12 +25,12 @@ BinPackParameters: false
 BraceWrapping:
   AfterClass: true
   AfterControlStatement: true
-  AfterEnum: false
+  AfterEnum: true
   AfterFunction: true
   AfterNamespace: false
   AfterObjCDeclaration: false
   AfterStruct: true
-  AfterUnion: false
+  AfterUnion: true
   BeforeCatch: false
   BeforeElse: true
   IndentBraces: false

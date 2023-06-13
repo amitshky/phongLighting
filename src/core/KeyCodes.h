@@ -2,7 +2,8 @@
 
 // From glfw3.h
 /* Printable keys */
-enum Key : int {
+enum Key : int
+{
 	SPACE = 32,
 	APOSTROPHE = 39, /* ' */
 	COMMA = 44, /* , */

@@ -5,9 +5,13 @@
 #include <vulkan/vulkan.h>
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
+#include "renderer/commandPool.h"
 #include "renderer/vertexBuffer.h"
+#include "renderer/descriptor.h"
 #include "renderer/uniformBuffer.h"
+#include "renderer/texture.h"
 #include "renderer/camera.h"
+#include "editor/ubo.h"
 
 
 class Renderer
@@ -45,7 +49,6 @@ private:
 	void CreateGraphicsPipeline();
 
 	// command buffer
-	void CreateCommandPool();
 	void CreateCommandBuffers();
 	void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -56,94 +59,65 @@ private:
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 
-	// uniform buffer
-	void CreateDescriptorSetLayout();
-	void CreateDescriptorPool();
-	void CreateUniformBuffers();
-	void CreateDescriptorSets();
-	void UpdateUniformBuffer(uint32_t currentFrameIndex);
-
-	// textures
-	void CreateTextureImage();
-	void CreateTextureImageView();
-	void CreateTextureSampler();
-	void TransitionImageLayout(VkImage image,
-		VkFormat format,
-		VkImageLayout oldLayout,
-		VkImageLayout newLayout,
-		uint32_t miplevels);
+	void UpdateUniformBuffers(uint32_t currentFrameIndex);
 
 private:
 	const VulkanConfig m_Config;
 	std::shared_ptr<Window> m_Window;
 
-	VulkanContext* m_VulkanContext;
-	Device* m_Device;
+	VulkanContext* m_VulkanContext = nullptr;
+	Device* m_Device = nullptr;
+	CommandPool* m_CommandPool = nullptr;
 
 	// swapchain
-	VkSwapchainKHR m_Swapchain;
-	std::vector<VkImage> m_SwapchainImages;
-	VkFormat m_SwapchainImageFormat;
-	VkExtent2D m_SwapchainExtent;
-	std::vector<VkImageView> m_SwapchainImageViews;
+	VkSwapchainKHR m_Swapchain{};
+	std::vector<VkImage> m_SwapchainImages{};
+	VkFormat m_SwapchainImageFormat{};
+	VkExtent2D m_SwapchainExtent{};
+	std::vector<VkImageView> m_SwapchainImageViews{};
 
 	// render pass
-	VkRenderPass m_RenderPass;
-
+	VkRenderPass m_RenderPass{};
 	// framebuffer
-	VkImage m_ColorImage;
-	VkDeviceMemory m_ColorImageMemory;
-	VkImageView m_ColorImageView;
-	VkImage m_DepthImage;
-	VkDeviceMemory m_DepthImageMemory;
-	VkImageView m_DepthImageView;
-	std::vector<VkFramebuffer> m_SwapchainFramebuffers;
+	VkImage m_ColorImage{};
+	VkDeviceMemory m_ColorImageMemory{};
+	VkImageView m_ColorImageView{};
+	VkImage m_DepthImage{};
+	VkDeviceMemory m_DepthImageMemory{};
+	VkImageView m_DepthImageView{};
+	std::vector<VkFramebuffer> m_SwapchainFramebuffers{};
 
 	// pipeline
-	VkPipeline m_Pipeline;
+	VkPipeline m_Pipeline{};
 
 	// command buffer
-	VkCommandPool m_CommandPool;
-	std::vector<VkCommandBuffer> m_CommandBuffers;
+	std::vector<VkCommandBuffer> m_CommandBuffers{};
 
 	// synchronization objects
 	// used to acquire swapchain images
-	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+	std::vector<VkSemaphore> m_ImageAvailableSemaphores{};
 	// signaled when command buffers have finished execution
-	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-	std::vector<VkFence> m_InFlightFences;
+	std::vector<VkSemaphore> m_RenderFinishedSemaphores{};
+	std::vector<VkFence> m_InFlightFences{};
 
 	// vertex buffer
-	VkBuffer m_VertexBuffer;
-	VkDeviceMemory m_VertexBufferMemory;
+	VkBuffer m_VertexBuffer{};
+	VkDeviceMemory m_VertexBufferMemory{};
 	// index buffer
-	VkBuffer m_IndexBuffer;
-	VkDeviceMemory m_IndexBufferMemory;
+	VkBuffer m_IndexBuffer{};
+	VkDeviceMemory m_IndexBufferMemory{};
 
-	// resource descriptors
-	VkDescriptorSetLayout m_DescriptorSetLayout;
-	VkPipelineLayout m_PipelineLayout;
-	VkDescriptorPool m_DescriptorPool;
-	std::vector<VkDescriptorSet> m_DescriptorSets;
-	// uniform buffers
-	std::vector<VkBuffer> m_UniformBuffers;
-	std::vector<VkDeviceMemory> m_UniformBufferMemory;
-	std::vector<void*> m_UniformBufferMapped;
-	std::vector<VkBuffer> m_DynamicUniformBuffers;
-	std::vector<VkDeviceMemory> m_DynamicUniformBufferMemory;
-	std::vector<void*> m_DynamicUniformBufferMapped;
 	UniformBufferObject m_Ubo{};
 	DynamicUniformBufferObject m_DUbo{};
+	std::vector<UniformBuffer> m_UniformBuffers{};
+	std::vector<UniformBuffer> m_DynamicUniformBuffers{};
 
-	// textures
-	VkImage m_TextureImage;
-	VkDeviceMemory m_TextureImageMemory;
-	VkImageView m_TextureImageView;
-	VkSampler m_TextureSampler;
+	std::unique_ptr<Texture2D> m_Texture{};
 
-	std::unique_ptr<Camera> m_Camera;
+	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
+
+	std::unique_ptr<Camera> m_Camera{};
 
 	uint32_t m_CurrentFrameIndex = 0;
 	bool m_FramebufferResized = false;
-	uint32_t m_Miplevels = 1;
 };
