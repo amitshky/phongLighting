@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include <functional>
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
@@ -64,3 +65,29 @@ struct hash<Vertex>
 	}
 };
 } // namespace std
+
+
+class VertexBuffer
+{
+public:
+	VertexBuffer(const std::vector<Vertex>& vertices, const std::vector<VkDeviceSize>& offsets);
+	~VertexBuffer();
+
+	inline VkBuffer GetBuffer() const { return m_VertexBuffer; }
+	inline void Draw(VkCommandBuffer commandBuffer) { vkCmdDraw(commandBuffer, m_VertexSize, 1, 0, 0); }
+	inline void Bind(VkCommandBuffer commandBuffer)
+	{
+		vkCmdBindVertexBuffers(
+			commandBuffer, 0, static_cast<uint32_t>(m_VertexOffsets.size()), &m_VertexBuffer, m_VertexOffsets.data());
+	}
+
+private:
+	void Init(const std::vector<Vertex>& vertices);
+	void Cleanup();
+
+private:
+	uint32_t m_VertexSize;
+	std::vector<VkDeviceSize> m_VertexOffsets;
+	VkBuffer m_VertexBuffer;
+	VkDeviceMemory m_VertexBufferMemory;
+};

@@ -7,6 +7,7 @@
 #include "renderer/device.h"
 #include "renderer/commandPool.h"
 #include "renderer/vertexBuffer.h"
+#include "renderer/indexBuffer.h"
 #include "renderer/descriptor.h"
 #include "renderer/uniformBuffer.h"
 #include "renderer/texture.h"
@@ -47,17 +48,11 @@ private:
 
 	// pipeline
 	void CreateGraphicsPipeline();
-
 	// command buffer
 	void CreateCommandBuffers();
 	void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
 	// synchronization objects
 	void CreateSyncObjects();
-
-	// vertex and index buffer
-	void CreateVertexBuffer();
-	void CreateIndexBuffer();
 
 	void UpdateUniformBuffers(uint32_t currentFrameIndex);
 
@@ -100,13 +95,6 @@ private:
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores{};
 	std::vector<VkFence> m_InFlightFences{};
 
-	// vertex buffer
-	VkBuffer m_VertexBuffer{};
-	VkDeviceMemory m_VertexBufferMemory{};
-	// index buffer
-	VkBuffer m_IndexBuffer{};
-	VkDeviceMemory m_IndexBufferMemory{};
-
 	UniformBufferObject m_Ubo{};
 	DynamicUniformBufferObject m_DUbo{};
 	std::vector<UniformBuffer> m_UniformBuffers{};
@@ -115,6 +103,9 @@ private:
 	std::unique_ptr<Texture2D> m_Texture{};
 
 	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
+
+	std::unique_ptr<VertexBuffer> m_VertexBuffer;
+	std::unique_ptr<IndexBuffer> m_IndexBuffer;
 
 	std::unique_ptr<Camera> m_Camera{};
 

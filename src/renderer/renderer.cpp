@@ -145,8 +145,8 @@ void Renderer::Init(const char* title)
 
 	CreateSyncObjects();
 
-	CreateVertexBuffer();
-	CreateIndexBuffer();
+	m_VertexBuffer = std::make_unique<VertexBuffer>(vertices, std::vector<VkDeviceSize>{ 0 });
+	m_IndexBuffer = std::make_unique<IndexBuffer>(indices);
 
 	m_Camera = std::make_unique<Camera>(
 		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height));
@@ -155,12 +155,6 @@ void Renderer::Init(const char* title)
 void Renderer::Cleanup()
 {
 	Device::WaitIdle();
-
-	vkFreeMemory(Device::GetDevice(), m_IndexBufferMemory, nullptr);
-	vkDestroyBuffer(Device::GetDevice(), m_IndexBuffer, nullptr);
-
-	vkFreeMemory(Device::GetDevice(), m_VertexBufferMemory, nullptr);
-	vkDestroyBuffer(Device::GetDevice(), m_VertexBuffer, nullptr);
 
 	for (size_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
@@ -179,6 +173,8 @@ void Renderer::Cleanup()
 	m_Texture.reset();
 	m_UniformBuffers.clear();
 	m_DynamicUniformBuffers.clear();
+	m_VertexBuffer.reset();
+	m_IndexBuffer.reset();
 
 	delete m_CommandPool;
 	delete m_Device;
@@ -760,10 +756,10 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	scissor.extent = m_SwapchainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	VkBuffer vertexBuffers[]{ m_VertexBuffer };
-	VkDeviceSize offsets[]{ 0 };
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	// VkBuffer vertexBuffers[]{ m_VertexBuffer };
+	// VkDeviceSize offsets[]{ 0 };
+	m_VertexBuffer->Bind(commandBuffer);
+	m_IndexBuffer->Bind(commandBuffer);
 
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)
 	{
@@ -799,66 +795,6 @@ void Renderer::CreateSyncObjects()
 				  || vkCreateFence(Device::GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS,
 			"Failed to create synchronization objects!")
 	}
-}
-
-void Renderer::CreateVertexBuffer()
-{
-	VkDeviceSize size = sizeof(vertices[0]) * static_cast<uint64_t>(vertices.size());
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMem;
-	utils::CreateBuffer(size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer,
-		stagingBufferMem);
-
-	void* data;
-	vkMapMemory(Device::GetDevice(), stagingBufferMem, 0, size, 0, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(size));
-	vkUnmapMemory(Device::GetDevice(), stagingBufferMem);
-
-	// create the actual vertex buffer
-	utils::CreateBuffer(size,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_VertexBuffer,
-		m_VertexBufferMemory);
-
-	utils::CopyBuffer(stagingBuffer, m_VertexBuffer, size);
-
-	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
-	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
-}
-
-void Renderer::CreateIndexBuffer()
-{
-	VkDeviceSize size = sizeof(indices[0]) * static_cast<uint64_t>(indices.size());
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMem;
-	utils::CreateBuffer(size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer,
-		stagingBufferMem);
-
-	void* data;
-	vkMapMemory(Device::GetDevice(), stagingBufferMem, 0, size, 0, &data);
-	memcpy(data, indices.data(), static_cast<size_t>(size));
-	vkUnmapMemory(Device::GetDevice(), stagingBufferMem);
-
-	// create the actual vertex buffer
-	utils::CreateBuffer(size,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_IndexBuffer,
-		m_IndexBufferMemory);
-
-	utils::CopyBuffer(stagingBuffer, m_IndexBuffer, size);
-
-	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
-	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)

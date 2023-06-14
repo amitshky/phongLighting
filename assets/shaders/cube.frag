@@ -19,7 +19,7 @@ void main()
 	vec3 ambientLight = lightColor * ambientStrength;
 
 	// diffuse light
-	float diffuseStrength = 1.0;
+	float diffuseStrength = 0.4;
 	vec3 norm = normalize(inNormal);
 	vec3 lightDir = normalize(inLightPos - inFragPos);
 	vec3 diffuseLight = diffuseStrength * max(dot(lightDir, norm), 0.0) * lightColor;

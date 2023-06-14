@@ -15,6 +15,7 @@ add_executable(
 	renderer/commandPool.cpp
 	renderer/shader.cpp
 	renderer/vertexBuffer.cpp
+	renderer/indexBuffer.cpp
 	renderer/uniformBuffer.cpp
 	renderer/descriptor.cpp
 	renderer/texture.cpp
