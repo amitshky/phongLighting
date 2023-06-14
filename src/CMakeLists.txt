@@ -20,6 +20,7 @@ add_executable(
 	renderer/descriptor.cpp
 	renderer/texture.cpp
 	renderer/shader.cpp
+	renderer/pipeline.cpp
 	renderer/camera.cpp
 
 	editor/ubo.cpp

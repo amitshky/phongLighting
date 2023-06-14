@@ -12,6 +12,7 @@
 #include "renderer/descriptor.h"
 #include "renderer/uniformBuffer.h"
 #include "renderer/texture.h"
+#include "renderer/pipeline.h"
 #include "renderer/camera.h"
 #include "editor/ubo.h"
 
@@ -30,8 +31,6 @@ private:
 	void Init(const char* title);
 	void Cleanup();
 
-	// pipeline
-	void CreateGraphicsPipeline();
 	// command buffer
 	void CreateCommandBuffers();
 	void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -61,7 +60,7 @@ private:
 	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
 
 	// pipeline
-	VkPipeline m_Pipeline{};
+	std::unique_ptr<Pipeline> m_Pipeline;
 	// command buffer
 	std::vector<VkCommandBuffer> m_CommandBuffers{};
 	// synchronization objects
