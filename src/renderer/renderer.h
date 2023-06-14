@@ -104,8 +104,8 @@ private:
 
 	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
 
-	std::unique_ptr<VertexBuffer> m_VertexBuffer;
-	std::unique_ptr<IndexBuffer> m_IndexBuffer;
+	std::unique_ptr<VertexBuffer> m_VertexBuffer{};
+	std::unique_ptr<IndexBuffer> m_IndexBuffer{};
 
 	std::unique_ptr<Camera> m_Camera{};
 

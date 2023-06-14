@@ -4,9 +4,8 @@
 #include "renderer/device.h"
 
 
-VertexBuffer::VertexBuffer(const std::vector<Vertex>& vertices, const std::vector<VkDeviceSize>& offsets)
-	: m_VertexSize{ static_cast<uint32_t>(vertices.size()) },
-	  m_VertexOffsets{ offsets }
+VertexBuffer::VertexBuffer(const std::vector<Vertex>& vertices)
+	: m_VertexSize{ static_cast<uint32_t>(vertices.size()) }
 {
 	Init(vertices);
 }
@@ -37,10 +36,10 @@ void VertexBuffer::Init(const std::vector<Vertex>& vertices)
 	utils::CreateBuffer(size,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_VertexBuffer,
-		m_VertexBufferMemory);
+		m_Buffer,
+		m_BufferMemory);
 
-	utils::CopyBuffer(stagingBuffer, m_VertexBuffer, size);
+	utils::CopyBuffer(stagingBuffer, m_Buffer, size);
 
 	vkFreeMemory(Device::GetDevice(), stagingBufferMem, nullptr);
 	vkDestroyBuffer(Device::GetDevice(), stagingBuffer, nullptr);
@@ -48,6 +47,6 @@ void VertexBuffer::Init(const std::vector<Vertex>& vertices)
 
 void VertexBuffer::Cleanup()
 {
-	vkFreeMemory(Device::GetDevice(), m_VertexBufferMemory, nullptr);
-	vkDestroyBuffer(Device::GetDevice(), m_VertexBuffer, nullptr);
+	vkFreeMemory(Device::GetDevice(), m_BufferMemory, nullptr);
+	vkDestroyBuffer(Device::GetDevice(), m_Buffer, nullptr);
 }

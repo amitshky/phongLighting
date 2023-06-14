@@ -145,7 +145,7 @@ void Renderer::Init(const char* title)
 
 	CreateSyncObjects();
 
-	m_VertexBuffer = std::make_unique<VertexBuffer>(vertices, std::vector<VkDeviceSize>{ 0 });
+	m_VertexBuffer = std::make_unique<VertexBuffer>(vertices);
 	m_IndexBuffer = std::make_unique<IndexBuffer>(indices);
 
 	m_Camera = std::make_unique<Camera>(
@@ -756,8 +756,6 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	scissor.extent = m_SwapchainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	// VkBuffer vertexBuffers[]{ m_VertexBuffer };
-	// VkDeviceSize offsets[]{ 0 };
 	m_VertexBuffer->Bind(commandBuffer);
 	m_IndexBuffer->Bind(commandBuffer);
 

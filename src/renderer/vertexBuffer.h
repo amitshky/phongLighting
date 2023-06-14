@@ -70,15 +70,14 @@ struct hash<Vertex>
 class VertexBuffer
 {
 public:
-	VertexBuffer(const std::vector<Vertex>& vertices, const std::vector<VkDeviceSize>& offsets);
+	VertexBuffer(const std::vector<Vertex>& vertices);
 	~VertexBuffer();
 
-	inline VkBuffer GetBuffer() const { return m_VertexBuffer; }
+	inline VkBuffer GetBuffer() const { return m_Buffer; }
 	inline void Draw(VkCommandBuffer commandBuffer) { vkCmdDraw(commandBuffer, m_VertexSize, 1, 0, 0); }
 	inline void Bind(VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindVertexBuffers(
-			commandBuffer, 0, static_cast<uint32_t>(m_VertexOffsets.size()), &m_VertexBuffer, m_VertexOffsets.data());
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_Buffer, m_Offsets);
 	}
 
 private:
@@ -87,7 +86,7 @@ private:
 
 private:
 	uint32_t m_VertexSize;
-	std::vector<VkDeviceSize> m_VertexOffsets;
-	VkBuffer m_VertexBuffer;
-	VkDeviceMemory m_VertexBufferMemory;
+	VkDeviceSize m_Offsets[1]{ 0 };
+	VkBuffer m_Buffer;
+	VkDeviceMemory m_BufferMemory;
 };
