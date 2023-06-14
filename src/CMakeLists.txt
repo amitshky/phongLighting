@@ -13,12 +13,13 @@ add_executable(
 	renderer/vulkanContext.cpp
 	renderer/device.cpp
 	renderer/commandPool.cpp
-	renderer/shader.cpp
+	renderer/swapchain.cpp
 	renderer/vertexBuffer.cpp
 	renderer/indexBuffer.cpp
 	renderer/uniformBuffer.cpp
 	renderer/descriptor.cpp
 	renderer/texture.cpp
+	renderer/shader.cpp
 	renderer/camera.cpp
 
 	editor/ubo.cpp

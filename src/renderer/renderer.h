@@ -6,6 +6,7 @@
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
 #include "renderer/commandPool.h"
+#include "renderer/swapchain.h"
 #include "renderer/vertexBuffer.h"
 #include "renderer/indexBuffer.h"
 #include "renderer/descriptor.h"
@@ -18,7 +19,7 @@
 class Renderer
 {
 public:
-	Renderer(const char* title, const VulkanConfig& config, std::shared_ptr<Window> window);
+	Renderer(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
 	~Renderer();
 
 	void Draw(float deltatime);
@@ -28,23 +29,6 @@ public:
 private:
 	void Init(const char* title);
 	void Cleanup();
-
-	// swapchain
-	static VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-	static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-	VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-	void CreateSwapchain();
-	void CreateSwapchainImageViews();
-	void CleanupSwapchain();
-	void RecreateSwapchain();
-
-	// render pass
-	void CreateRenderPass();
-	static VkFormat FindDepthFormat();
-	// framebuffer
-	void CreateColorResource();
-	void CreateDepthResource();
-	void CreateFramebuffers();
 
 	// pipeline
 	void CreateGraphicsPipeline();
@@ -64,23 +48,7 @@ private:
 	Device* m_Device = nullptr;
 	CommandPool* m_CommandPool = nullptr;
 
-	// swapchain
-	VkSwapchainKHR m_Swapchain{};
-	std::vector<VkImage> m_SwapchainImages{};
-	VkFormat m_SwapchainImageFormat{};
-	VkExtent2D m_SwapchainExtent{};
-	std::vector<VkImageView> m_SwapchainImageViews{};
-
-	// render pass
-	VkRenderPass m_RenderPass{};
-	// framebuffer
-	VkImage m_ColorImage{};
-	VkDeviceMemory m_ColorImageMemory{};
-	VkImageView m_ColorImageView{};
-	VkImage m_DepthImage{};
-	VkDeviceMemory m_DepthImageMemory{};
-	VkImageView m_DepthImageView{};
-	std::vector<VkFramebuffer> m_SwapchainFramebuffers{};
+	std::unique_ptr<Swapchain> m_Swapchain{};
 
 	std::unique_ptr<VertexBuffer> m_VertexBuffer{};
 	std::unique_ptr<IndexBuffer> m_IndexBuffer{};
