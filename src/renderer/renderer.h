@@ -26,7 +26,7 @@ public:
 
 private:
 	void Init(const char* title);
-	void Terminate();
+	void Cleanup();
 
 	// swapchain
 	static VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

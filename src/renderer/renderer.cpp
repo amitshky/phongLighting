@@ -76,7 +76,7 @@ Renderer::Renderer(const char* title, const VulkanConfig& config, std::shared_pt
 
 Renderer::~Renderer()
 {
-	Terminate();
+	Cleanup();
 }
 
 void Renderer::Init(const char* title)
@@ -152,27 +152,9 @@ void Renderer::Init(const char* title)
 		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height));
 }
 
-void Renderer::Terminate()
+void Renderer::Cleanup()
 {
 	Device::WaitIdle();
-
-	// vkDestroySampler(Device::GetDevice(), m_TextureSampler, nullptr);
-	// vkDestroyImageView(Device::GetDevice(), m_TextureImageView, nullptr);
-	// vkFreeMemory(Device::GetDevice(), m_TextureImageMemory, nullptr);
-	// vkDestroyImage(Device::GetDevice(), m_TextureImage, nullptr);
-
-	// vkDestroyDescriptorPool(Device::GetDevice(), m_DescriptorPool, nullptr);
-	// for (uint32_t i = 0; i < m_Config.maxFramesInFlight; ++i)
-	// {
-	// 	vkUnmapMemory(Device::GetDevice(), m_UniformBufferMemory[i]);
-	// 	vkFreeMemory(Device::GetDevice(), m_UniformBufferMemory[i], nullptr);
-	// 	vkDestroyBuffer(Device::GetDevice(), m_UniformBuffers[i], nullptr);
-
-	// 	vkUnmapMemory(Device::GetDevice(), m_DynamicUniformBufferMemory[i]);
-	// 	vkFreeMemory(Device::GetDevice(), m_DynamicUniformBufferMemory[i], nullptr);
-	// 	vkDestroyBuffer(Device::GetDevice(), m_DynamicUniformBuffers[i], nullptr);
-	// }
-	// vkDestroyDescriptorSetLayout(Device::GetDevice(), m_DescriptorSetLayout, nullptr);
 
 	vkFreeMemory(Device::GetDevice(), m_IndexBufferMemory, nullptr);
 	vkDestroyBuffer(Device::GetDevice(), m_IndexBuffer, nullptr);
@@ -188,7 +170,6 @@ void Renderer::Terminate()
 	}
 
 	vkDestroyPipeline(Device::GetDevice(), m_Pipeline, nullptr);
-	// vkDestroyPipelineLayout(Device::GetDevice(), m_PipelineLayout, nullptr);
 
 	CleanupSwapchain();
 	vkDestroyRenderPass(Device::GetDevice(), m_RenderPass, nullptr);
