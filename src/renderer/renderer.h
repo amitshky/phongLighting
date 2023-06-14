@@ -82,30 +82,26 @@ private:
 	VkImageView m_DepthImageView{};
 	std::vector<VkFramebuffer> m_SwapchainFramebuffers{};
 
+	std::unique_ptr<VertexBuffer> m_VertexBuffer{};
+	std::unique_ptr<IndexBuffer> m_IndexBuffer{};
+
+	UniformBufferObject m_Ubo{};
+	DynamicUniformBufferObject m_DUbo{};
+	std::vector<UniformBuffer> m_UniformBuffers{};
+	std::vector<UniformBuffer> m_DynamicUniformBuffers{};
+	std::unique_ptr<Texture2D> m_Texture{};
+	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
+
 	// pipeline
 	VkPipeline m_Pipeline{};
-
 	// command buffer
 	std::vector<VkCommandBuffer> m_CommandBuffers{};
-
 	// synchronization objects
 	// used to acquire swapchain images
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores{};
 	// signaled when command buffers have finished execution
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores{};
 	std::vector<VkFence> m_InFlightFences{};
-
-	UniformBufferObject m_Ubo{};
-	DynamicUniformBufferObject m_DUbo{};
-	std::vector<UniformBuffer> m_UniformBuffers{};
-	std::vector<UniformBuffer> m_DynamicUniformBuffers{};
-
-	std::unique_ptr<Texture2D> m_Texture{};
-
-	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
-
-	std::unique_ptr<VertexBuffer> m_VertexBuffer{};
-	std::unique_ptr<IndexBuffer> m_IndexBuffer{};
 
 	std::unique_ptr<Camera> m_Camera{};
 

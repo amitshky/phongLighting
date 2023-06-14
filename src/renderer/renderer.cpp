@@ -93,6 +93,9 @@ void Renderer::Init(const char* title)
 	CreateDepthResource();
 	CreateFramebuffers();
 
+	m_VertexBuffer = std::make_unique<VertexBuffer>(vertices);
+	m_IndexBuffer = std::make_unique<IndexBuffer>(indices);
+
 	VkDeviceSize uboSize = static_cast<uint64_t>(sizeof(UniformBufferObject));
 	VkDeviceSize minAlignment = Device::GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
 	m_DUbo.Init(minAlignment, NUM_CUBES);
@@ -140,13 +143,8 @@ void Renderer::Init(const char* title)
 	m_DescriptorSet->Create();
 
 	CreateGraphicsPipeline();
-
 	CreateCommandBuffers();
-
 	CreateSyncObjects();
-
-	m_VertexBuffer = std::make_unique<VertexBuffer>(vertices);
-	m_IndexBuffer = std::make_unique<IndexBuffer>(indices);
 
 	m_Camera = std::make_unique<Camera>(
 		static_cast<float>(m_SwapchainExtent.width) / static_cast<float>(m_SwapchainExtent.height));
@@ -176,6 +174,7 @@ void Renderer::Cleanup()
 	m_VertexBuffer.reset();
 	m_IndexBuffer.reset();
 
+	// TODO: make these shared_ptr
 	delete m_CommandPool;
 	delete m_Device;
 	delete m_VulkanContext;
@@ -763,7 +762,7 @@ void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imag
 	{
 		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
 		m_DescriptorSet->Bind(commandBuffer, m_CurrentFrameIndex, 1, &dynamicOffset);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		m_IndexBuffer->Draw(commandBuffer);
 	}
 
 	vkCmdEndRenderPass(commandBuffer);
