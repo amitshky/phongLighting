@@ -12,19 +12,18 @@ public:
 	void Begin(uint32_t currentFrameIdx);
 	void End(uint32_t currentFrameIdx);
 	void Submit(VkFence inFlightFence,
-		const VkSemaphore* waitSemaphores,
+		const VkSemaphore* pWaitSemaphores,
 		uint32_t waitSemaphoreCount,
-		const VkSemaphore* signalSemaphores,
+		const VkSemaphore* pSignalSemaphores,
 		uint32_t signalSemaphoreCount,
-		const VkPipelineStageFlags* waitStages,
+		const VkPipelineStageFlags* pWaitStages,
 		uint32_t currentFrameIdx);
 	void Reset(uint32_t currentFrameIdx);
 
 	static VkCommandBuffer BeginSingleTimeCommands();
 	static void EndSingleTimeCommands(VkCommandBuffer cmdBuff);
 
-	inline VkCommandBuffer* GetBuffers() { return m_CommandBuffers.data(); }
-	// inline VkCommandBuffer& GetBufferAt(uint32_t currentFrameIndex) { return m_CommandBuffers[currentFrameIndex]; }
+	inline VkCommandBuffer GetBufferAt(uint32_t currentFrameIndex) const { return m_CommandBuffers[currentFrameIndex]; }
 
 private:
 	void Init(uint64_t cmdBuffCount);

@@ -141,7 +141,8 @@ void Renderer::Init(const char* title)
 		m_DescriptorSet->GetPipelineLayout(),
 		m_Swapchain->GetRenderPass());
 
-	CreateCommandBuffers();
+	m_CommandBuffer = std::make_unique<CommandBuffer>(m_Config.maxFramesInFlight);
+
 	CreateSyncObjects();
 
 	m_Camera = std::make_unique<Camera>(
@@ -160,6 +161,7 @@ void Renderer::Cleanup()
 	}
 
 	// destroying objects
+	m_CommandBuffer.reset();
 	m_Pipeline.reset();
 	m_DescriptorSet.reset();
 	m_Texture.reset();
@@ -182,7 +184,9 @@ void Renderer::Draw(float deltatime)
 
 	uint32_t nextImageIndex = 0;
 	VkResult result =
-		m_Swapchain->AcquireNextImageIndex(m_ImageAvailableSemaphores[m_CurrentFrameIndex], &nextImageIndex);
+		m_Swapchain->AcquireNextImageIndex(m_ImageAvailableSemaphores[m_CurrentFrameIndex], // signal this semaphore
+			&nextImageIndex);
+
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
 		// we cannot simply return here, because the queue is never
@@ -198,33 +202,38 @@ void Renderer::Draw(float deltatime)
 	// avoid a deadlock reset the fence to unsignaled state
 	vkResetFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex]);
 
-	// record command buffer
-	vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrameIndex], 0);
-	RecordCommandBuffers(m_CommandBuffers[m_CurrentFrameIndex], nextImageIndex);
+	VkCommandBuffer cmdBuff = m_CommandBuffer->GetBufferAt(m_CurrentFrameIndex);
+	m_CommandBuffer->Begin(m_CurrentFrameIndex);
+	m_Swapchain->BeginRenderPass(cmdBuff, nextImageIndex);
+	m_Pipeline->Bind(cmdBuff);
+
+	m_VertexBuffer->Bind(cmdBuff);
+	m_IndexBuffer->Bind(cmdBuff);
+
+	for (uint64_t i = 0; i < NUM_CUBES; ++i)
+	{
+		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
+		m_DescriptorSet->Bind(cmdBuff, m_CurrentFrameIndex, 1, &dynamicOffset);
+		m_IndexBuffer->Draw(cmdBuff);
+	}
+
+	m_Swapchain->EndRenderPass(cmdBuff);
+	m_CommandBuffer->End(m_CurrentFrameIndex);
 
 	UpdateUniformBuffers(m_CurrentFrameIndex);
 
-	// submit the command buffer
-	std::array<VkSemaphore, 1> waitSemaphores{ m_ImageAvailableSemaphores[m_CurrentFrameIndex] };
-	std::array<VkSemaphore, 1> signalSemaphores{ m_RenderFinishedSemaphores[m_CurrentFrameIndex] };
 	std::array<VkPipelineStageFlags, 1> waitStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	m_CommandBuffer->Submit(m_InFlightFences[m_CurrentFrameIndex],
+		&m_ImageAvailableSemaphores[m_CurrentFrameIndex], // wait on this semaphore
+		1,
+		&m_RenderFinishedSemaphores[m_CurrentFrameIndex], // signal this semaphore
+		1,
+		waitStages.data(),
+		m_CurrentFrameIndex);
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
-	submitInfo.pWaitSemaphores = waitSemaphores.data();
-	submitInfo.pWaitDstStageMask = waitStages.data();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrameIndex];
-	submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
-	submitInfo.pSignalSemaphores = signalSemaphores.data();
-
-	// signals the fence after executing the command buffer
-	THROW(
-		vkQueueSubmit(Device::GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrameIndex]) != VK_SUCCESS,
-		"Failed to submit draw command buffer!")
-
-	m_Swapchain->Present(signalSemaphores.data(), static_cast<uint32_t>(signalSemaphores.size()), &nextImageIndex);
+	m_Swapchain->Present(&m_RenderFinishedSemaphores[m_CurrentFrameIndex], // wait on this semaphore
+		1,
+		&nextImageIndex);
 
 	m_Camera->OnUpdate(deltatime);
 	// update current frame index
@@ -241,45 +250,6 @@ void Renderer::OnResize(int /*unused*/, int /*unused*/)
 void Renderer::OnMouseMove(double xpos, double ypos)
 {
 	m_Camera->OnMouseMove(xpos, ypos);
-}
-
-void Renderer::CreateCommandBuffers()
-{
-	m_CommandBuffers.resize(m_Config.maxFramesInFlight);
-
-	VkCommandBufferAllocateInfo cmdBuffAllocInfo{};
-	cmdBuffAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cmdBuffAllocInfo.commandPool = CommandPool::Get();
-	cmdBuffAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cmdBuffAllocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
-
-	THROW(vkAllocateCommandBuffers(Device::GetDevice(), &cmdBuffAllocInfo, m_CommandBuffers.data()) != VK_SUCCESS,
-		"Failed to allocate command buffers!")
-}
-
-void Renderer::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-{
-	VkCommandBufferBeginInfo cmdBuffBeginInfo{};
-	cmdBuffBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-	THROW(vkBeginCommandBuffer(commandBuffer, &cmdBuffBeginInfo) != VK_SUCCESS,
-		"Failed to begin recording command buffer!")
-
-	m_Swapchain->BeginRenderPass(commandBuffer, imageIndex);
-	m_Pipeline->Bind(commandBuffer);
-
-	m_VertexBuffer->Bind(commandBuffer);
-	m_IndexBuffer->Bind(commandBuffer);
-
-	for (uint64_t i = 0; i < NUM_CUBES; ++i)
-	{
-		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
-		m_DescriptorSet->Bind(commandBuffer, m_CurrentFrameIndex, 1, &dynamicOffset);
-		m_IndexBuffer->Draw(commandBuffer);
-	}
-
-	m_Swapchain->EndRenderPass(commandBuffer);
-	THROW(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS, "Failed to record command buffer!");
 }
 
 void Renderer::CreateSyncObjects()

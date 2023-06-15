@@ -13,6 +13,7 @@ add_executable(
 	renderer/vulkanContext.cpp
 	renderer/device.cpp
 	renderer/commandPool.cpp
+	renderer/commandBuffer.cpp
 	renderer/swapchain.cpp
 	renderer/vertexBuffer.cpp
 	renderer/indexBuffer.cpp

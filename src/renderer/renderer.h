@@ -6,6 +6,7 @@
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
 #include "renderer/commandPool.h"
+#include "renderer/commandBuffer.h"
 #include "renderer/swapchain.h"
 #include "renderer/vertexBuffer.h"
 #include "renderer/indexBuffer.h"
@@ -31,9 +32,6 @@ private:
 	void Init(const char* title);
 	void Cleanup();
 
-	// command buffer
-	void CreateCommandBuffers();
-	void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	// synchronization objects
 	void CreateSyncObjects();
 
@@ -62,7 +60,7 @@ private:
 	// pipeline
 	std::unique_ptr<Pipeline> m_Pipeline;
 	// command buffer
-	std::vector<VkCommandBuffer> m_CommandBuffers{};
+	std::unique_ptr<CommandBuffer> m_CommandBuffer{};
 	// synchronization objects
 	// used to acquire swapchain images
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores{};

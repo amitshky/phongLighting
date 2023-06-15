@@ -40,22 +40,22 @@ void CommandBuffer::End(uint32_t currentFrameIdx)
 }
 
 void CommandBuffer::Submit(VkFence inFlightFence,
-	const VkSemaphore* waitSemaphores,
+	const VkSemaphore* pWaitSemaphores,
 	uint32_t waitSemaphoreCount,
-	const VkSemaphore* signalSemaphores,
+	const VkSemaphore* pSignalSemaphores,
 	uint32_t signalSemaphoreCount,
-	const VkPipelineStageFlags* waitStages,
+	const VkPipelineStageFlags* pWaitStages,
 	uint32_t currentFrameIdx)
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.waitSemaphoreCount = waitSemaphoreCount;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.pWaitSemaphores = pWaitSemaphores;
+	submitInfo.pWaitDstStageMask = pWaitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_CommandBuffers[currentFrameIdx];
 	submitInfo.signalSemaphoreCount = signalSemaphoreCount;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	submitInfo.pSignalSemaphores = pSignalSemaphores;
 
 	// signals the fence after executing the command buffer
 	THROW(vkQueueSubmit(Device::GetGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS,
