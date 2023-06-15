@@ -69,12 +69,27 @@ void Swapchain::RecreateSwapchain()
 	CreateFramebuffers();
 }
 
-VkResult Swapchain::AcquireNextImageIndex(VkSemaphore imageAvailableSemaphore, uint32_t* nextImageIndex)
+VkResult Swapchain::AcquireNextImageIndex(VkSemaphore imageAvailableSemaphore, uint32_t* pImageIndex)
 {
 	// acquire image from the swapchain
 	// signals the semaphore
 	return vkAcquireNextImageKHR(
-		Device::GetDevice(), m_Swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, nextImageIndex);
+		Device::GetDevice(), m_Swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, pImageIndex);
+}
+
+void Swapchain::Present(const VkSemaphore* pWaitSemaphores, uint32_t waitSemaphoreCount, const uint32_t* pImageIndices)
+{
+	std::array<VkSwapchainKHR, 1> swapchains{ m_Swapchain };
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = waitSemaphoreCount;
+	presentInfo.pWaitSemaphores = pWaitSemaphores;
+	presentInfo.swapchainCount = static_cast<uint32_t>(swapchains.size());
+	presentInfo.pSwapchains = swapchains.data();
+	presentInfo.pImageIndices = pImageIndices;
+	presentInfo.pResults = nullptr;
+
+	vkQueuePresentKHR(Device::GetPresentQueue(), &presentInfo);
 }
 
 void Swapchain::BeginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex)

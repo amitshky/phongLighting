@@ -15,6 +15,7 @@ public:
 	void Cleanup();
 	void RecreateSwapchain();
 	VkResult AcquireNextImageIndex(VkSemaphore imageAvailableSemaphore, uint32_t* nextImageIndex);
+	void Present(const VkSemaphore* pWaitSemaphores, uint32_t waitSemaphoreCount, const uint32_t* pImageIndices);
 
 	void BeginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void EndRenderPass(VkCommandBuffer commandBuffer);

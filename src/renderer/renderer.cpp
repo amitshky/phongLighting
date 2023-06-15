@@ -224,18 +224,7 @@ void Renderer::Draw(float deltatime)
 		vkQueueSubmit(Device::GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrameIndex]) != VK_SUCCESS,
 		"Failed to submit draw command buffer!")
 
-	// present the image
-	std::array<VkSwapchainKHR, 1> swapchains{ m_Swapchain->GetHandle() };
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
-	presentInfo.pWaitSemaphores = signalSemaphores.data();
-	presentInfo.swapchainCount = static_cast<uint32_t>(swapchains.size());
-	presentInfo.pSwapchains = swapchains.data();
-	presentInfo.pImageIndices = &nextImageIndex;
-	presentInfo.pResults = nullptr;
-
-	vkQueuePresentKHR(Device::GetPresentQueue(), &presentInfo);
+	m_Swapchain->Present(signalSemaphores.data(), static_cast<uint32_t>(signalSemaphores.size()), &nextImageIndex);
 
 	m_Camera->OnUpdate(deltatime);
 	// update current frame index
