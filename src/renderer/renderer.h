@@ -44,9 +44,9 @@ private:
 	const VulkanConfig m_Config;
 	std::shared_ptr<Window> m_Window;
 
-	VulkanContext* m_VulkanContext = nullptr;
-	Device* m_Device = nullptr;
-	CommandPool* m_CommandPool = nullptr;
+	std::shared_ptr<VulkanContext> m_VulkanContext{};
+	std::shared_ptr<Device> m_Device{};
+	std::shared_ptr<CommandPool> m_CommandPool{};
 
 	std::unique_ptr<Swapchain> m_Swapchain{};
 

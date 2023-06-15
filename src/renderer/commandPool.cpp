@@ -5,11 +5,10 @@
 #include "renderer/device.h"
 
 
-CommandPool* CommandPool::s_Instance = nullptr;
+std::shared_ptr<CommandPool> CommandPool::s_Instance = nullptr;
 
 CommandPool::CommandPool()
 {
-	s_Instance = this;
 	CreateCommandPool();
 }
 
@@ -18,10 +17,13 @@ CommandPool::~CommandPool()
 	vkDestroyCommandPool(Device::GetDevice(), m_CommandPool, nullptr);
 }
 
-CommandPool* CommandPool::Create()
+std::shared_ptr<CommandPool> CommandPool::Create()
 {
 	if (s_Instance == nullptr)
-		return new CommandPool{};
+	{
+		s_Instance = std::make_shared<CommandPool>();
+		return s_Instance;
+	}
 
 	return s_Instance;
 }

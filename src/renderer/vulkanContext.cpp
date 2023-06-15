@@ -4,13 +4,12 @@
 #include "core/core.h"
 
 
-VulkanContext* VulkanContext::s_Instance = nullptr;
+std::shared_ptr<VulkanContext> VulkanContext::s_Instance = nullptr;
 
 VulkanContext::VulkanContext(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window)
 	: m_Config{ config },
 	  m_Window{ window }
 {
-	s_Instance = this;
 	CreateInstance(title);
 	SetupDebugMessenger();
 	m_Window->CreateWindowSurface(m_VulkanInstance);
@@ -26,11 +25,14 @@ VulkanContext::~VulkanContext()
 	vkDestroyInstance(m_VulkanInstance, nullptr);
 }
 
-VulkanContext*
+std::shared_ptr<VulkanContext>
 	VulkanContext::Create(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window)
 {
 	if (s_Instance == nullptr)
-		return new VulkanContext{ title, config, window };
+	{
+		s_Instance = std::make_shared<VulkanContext>(title, config, window);
+		return s_Instance;
+	}
 
 	return s_Instance;
 }

@@ -5,14 +5,13 @@
 #include "renderer/vulkanContext.h"
 
 
-Device* Device::s_Instance = nullptr;
+std::shared_ptr<Device> Device::s_Instance = nullptr;
 
 Device::Device(const VulkanConfig& config, VkSurfaceKHR windowSurface)
 	: m_Config{ config },
 	  m_WindowSurface{ windowSurface },
 	  m_PhysicalDevice{ VK_NULL_HANDLE }
 {
-	s_Instance = this;
 	PickPhysicalDevice();
 	CreateLogicalDevice();
 }
@@ -22,10 +21,13 @@ Device::~Device()
 	vkDestroyDevice(m_DeviceVk, nullptr);
 }
 
-Device* Device::Create(const VulkanConfig& config, VkSurfaceKHR windowSurface)
+std::shared_ptr<Device> Device::Create(const VulkanConfig& config, VkSurfaceKHR windowSurface)
 {
 	if (s_Instance == nullptr)
-		return new Device{ config, windowSurface };
+	{
+		s_Instance = std::make_shared<Device>(config, windowSurface);
+		return s_Instance;
+	}
 
 	return s_Instance;
 }

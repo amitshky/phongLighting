@@ -159,22 +159,6 @@ void Renderer::Cleanup()
 		vkDestroySemaphore(Device::GetDevice(), m_RenderFinishedSemaphores[i], nullptr);
 		vkDestroyFence(Device::GetDevice(), m_InFlightFences[i], nullptr);
 	}
-
-	// destroying objects
-	m_CommandBuffer.reset();
-	m_Pipeline.reset();
-	m_DescriptorSet.reset();
-	m_Texture.reset();
-	m_UniformBuffers.clear();
-	m_DynamicUniformBuffers.clear();
-	m_VertexBuffer.reset();
-	m_IndexBuffer.reset();
-	m_Swapchain.reset();
-
-	// TODO: make these shared_ptr
-	delete m_CommandPool;
-	delete m_Device;
-	delete m_VulkanContext;
 }
 
 void Renderer::Draw(float deltatime)

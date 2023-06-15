@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <memory>
 #include "renderer/vulkanContext.h"
 
 
@@ -24,11 +25,12 @@ struct SwapchainSupportDetails
 class Device
 {
 public:
+	Device(const VulkanConfig& config, VkSurfaceKHR windowSurface);
 	Device(const Device&) = delete;
 	Device& operator=(const Device&) = delete;
 	~Device();
 
-	static Device* Create(const VulkanConfig& config, VkSurfaceKHR windowSurface);
+	static std::shared_ptr<Device> Create(const VulkanConfig& config, VkSurfaceKHR windowSurface);
 
 	static inline VkDevice GetDevice() { return s_Instance->m_DeviceVk; }
 	static inline VkPhysicalDevice GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
@@ -52,8 +54,6 @@ public:
 		VkFormatFeatureFlags features);
 
 private:
-	Device(const VulkanConfig& config, VkSurfaceKHR windowSurface);
-
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
 
@@ -67,7 +67,7 @@ private:
 	VkInstance m_VulkanInstance;
 	VkSurfaceKHR m_WindowSurface;
 
-	static Device* s_Instance;
+	static std::shared_ptr<Device> s_Instance;
 
 	VkPhysicalDevice m_PhysicalDevice;
 	VkDevice m_DeviceVk;
