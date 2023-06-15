@@ -28,6 +28,9 @@ public:
 	void OnResize(int width, int height);
 	void OnMouseMove(double xpos, double ypos);
 
+	void BeginScene();
+	void EndScene();
+
 private:
 	void Init(const char* title);
 	void Cleanup();
@@ -57,10 +60,9 @@ private:
 	std::unique_ptr<Texture2D> m_Texture{};
 	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
 
-	// pipeline
-	std::unique_ptr<Pipeline> m_Pipeline;
-	// command buffer
+	std::unique_ptr<Pipeline> m_Pipeline{};
 	std::unique_ptr<CommandBuffer> m_CommandBuffer{};
+
 	// synchronization objects
 	// used to acquire swapchain images
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores{};
@@ -70,6 +72,8 @@ private:
 
 	std::unique_ptr<Camera> m_Camera{};
 
+	VkCommandBuffer m_ActiveCommandBuffer{};
 	uint32_t m_CurrentFrameIndex = 0;
+	uint32_t m_NextFrameIndex = 0; // acquired from swapchain
 	bool m_FramebufferResized = false;
 };

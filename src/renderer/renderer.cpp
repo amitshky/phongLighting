@@ -179,65 +179,24 @@ void Renderer::Cleanup()
 
 void Renderer::Draw(float deltatime)
 {
-	// wait for previous frame to signal the fence
-	vkWaitForFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
+	BeginScene();
 
-	uint32_t nextImageIndex = 0;
-	VkResult result =
-		m_Swapchain->AcquireNextImageIndex(m_ImageAvailableSemaphores[m_CurrentFrameIndex], // signal this semaphore
-			&nextImageIndex);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		// we cannot simply return here, because the queue is never
-		// submitted and thus the fences are never signaled , causing a
-		// deadlock; to solve this we delay resetting the fences until
-		// after we check the swapchain
-		m_Swapchain->RecreateSwapchain();
-		return;
-	}
-	THROW(result != VK_SUCCESS, "Failed to acquire swapchain image!")
-
-	// resetting the fence has been set after the result has been checked to
-	// avoid a deadlock reset the fence to unsignaled state
-	vkResetFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex]);
-
-	VkCommandBuffer cmdBuff = m_CommandBuffer->GetBufferAt(m_CurrentFrameIndex);
-	m_CommandBuffer->Begin(m_CurrentFrameIndex);
-	m_Swapchain->BeginRenderPass(cmdBuff, nextImageIndex);
-	m_Pipeline->Bind(cmdBuff);
-
-	m_VertexBuffer->Bind(cmdBuff);
-	m_IndexBuffer->Bind(cmdBuff);
+	m_Pipeline->Bind(m_ActiveCommandBuffer);
+	m_VertexBuffer->Bind(m_ActiveCommandBuffer);
+	m_IndexBuffer->Bind(m_ActiveCommandBuffer);
 
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)
 	{
 		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
-		m_DescriptorSet->Bind(cmdBuff, m_CurrentFrameIndex, 1, &dynamicOffset);
-		m_IndexBuffer->Draw(cmdBuff);
+		m_DescriptorSet->Bind(m_ActiveCommandBuffer, m_CurrentFrameIndex, 1, &dynamicOffset);
+		m_IndexBuffer->Draw(m_ActiveCommandBuffer);
 	}
-
-	m_Swapchain->EndRenderPass(cmdBuff);
-	m_CommandBuffer->End(m_CurrentFrameIndex);
 
 	UpdateUniformBuffers(m_CurrentFrameIndex);
 
-	std::array<VkPipelineStageFlags, 1> waitStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	m_CommandBuffer->Submit(m_InFlightFences[m_CurrentFrameIndex],
-		&m_ImageAvailableSemaphores[m_CurrentFrameIndex], // wait on this semaphore
-		1,
-		&m_RenderFinishedSemaphores[m_CurrentFrameIndex], // signal this semaphore
-		1,
-		waitStages.data(),
-		m_CurrentFrameIndex);
-
-	m_Swapchain->Present(&m_RenderFinishedSemaphores[m_CurrentFrameIndex], // wait on this semaphore
-		1,
-		&nextImageIndex);
+	EndScene();
 
 	m_Camera->OnUpdate(deltatime);
-	// update current frame index
-	m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % m_Config.maxFramesInFlight;
 }
 
 void Renderer::OnResize(int /*unused*/, int /*unused*/)
@@ -250,6 +209,47 @@ void Renderer::OnResize(int /*unused*/, int /*unused*/)
 void Renderer::OnMouseMove(double xpos, double ypos)
 {
 	m_Camera->OnMouseMove(xpos, ypos);
+}
+
+void Renderer::BeginScene()
+{
+	// wait for previous frame to signal the fence
+	vkWaitForFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
+
+	VkResult result =
+		m_Swapchain->AcquireNextImageIndex(m_ImageAvailableSemaphores[m_CurrentFrameIndex], // signal this semaphore
+			&m_NextFrameIndex);
+	THROW(result != VK_SUCCESS, "Failed to acquire swapchain image!")
+
+	// resetting the fence has been set after the result has been checked to
+	// avoid a deadlock reset the fence to unsignaled state
+	vkResetFences(Device::GetDevice(), 1, &m_InFlightFences[m_CurrentFrameIndex]);
+
+	m_ActiveCommandBuffer = m_CommandBuffer->GetBufferAt(m_CurrentFrameIndex);
+	m_CommandBuffer->Begin(m_CurrentFrameIndex);
+	m_Swapchain->BeginRenderPass(m_ActiveCommandBuffer, m_NextFrameIndex);
+}
+
+void Renderer::EndScene()
+{
+	m_Swapchain->EndRenderPass(m_ActiveCommandBuffer);
+	m_CommandBuffer->End(m_CurrentFrameIndex);
+
+	std::array<VkPipelineStageFlags, 1> waitStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	m_CommandBuffer->Submit(m_InFlightFences[m_CurrentFrameIndex],
+		&m_ImageAvailableSemaphores[m_CurrentFrameIndex], // wait on this semaphore
+		1,
+		&m_RenderFinishedSemaphores[m_CurrentFrameIndex], // signal this semaphore
+		1,
+		waitStages.data(),
+		m_CurrentFrameIndex);
+
+	m_Swapchain->Present(&m_RenderFinishedSemaphores[m_CurrentFrameIndex], // wait on this semaphore
+		1,
+		&m_NextFrameIndex);
+
+	// update current frame index
+	m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % m_Config.maxFramesInFlight;
 }
 
 void Renderer::CreateSyncObjects()
@@ -295,7 +295,7 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f))
 					   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
-		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4, converted to 3x3 in the vertex shader
+		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
 	}
 	m_DynamicUniformBuffers[currentFrameIndex].Map(m_DUbo.buffer);
 }
