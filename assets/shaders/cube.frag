@@ -32,6 +32,8 @@ void main()
 	vec3 specularLight = specularStrength * pow(max(dot(norm, halfwayDir), 0.0), shininess) * lightColor;
 
 	vec3 cubeColor = texture(uTexSampler, inTexCoord).rgb;
-	outColor = vec4((ambientLight + diffuseLight + specularLight) * cubeColor, 1.0);
+	vec3 result = (ambientLight + diffuseLight + specularLight) * cubeColor;
+	// result = pow(result.rgb, vec3(1.0 / 2.2));
+	outColor = vec4(result, 1.0);
 	// outColor = vec4(inTexCoord, 0.0, 1.0);
 }
