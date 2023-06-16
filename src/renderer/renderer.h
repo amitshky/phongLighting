@@ -32,12 +32,10 @@ public:
 	void BeginScene();
 	void EndScene();
 
-
 private:
 	void Init(const char* title);
 	void Cleanup();
 
-	// synchronization objects
 	void CreateSyncObjects();
 	void UpdateUniformBuffers(uint32_t currentFrameIndex);
 
