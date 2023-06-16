@@ -44,6 +44,7 @@ target_include_directories(
 	"lib/glfw/include/"
 	"lib/fmt/include/"
 	"lib/spdlog/include/"
+	"lib/imgui/"
 	${Vulkan_INCLUDE_DIR}
 )
 
@@ -51,5 +52,6 @@ target_link_libraries(
 	${PROJECT_NAME}
 	glfw
 	spdlog::spdlog
+	imgui
 	${Vulkan_LIBRARY}
 )

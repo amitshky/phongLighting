@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include "imgui/backends/imgui_impl_vulkan.h"
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
 #include "renderer/commandPool.h"
@@ -31,13 +32,13 @@ public:
 	void BeginScene();
 	void EndScene();
 
+
 private:
 	void Init(const char* title);
 	void Cleanup();
 
 	// synchronization objects
 	void CreateSyncObjects();
-
 	void UpdateUniformBuffers(uint32_t currentFrameIndex);
 
 private:

@@ -19,10 +19,10 @@ enum class DescriptorType
 
 struct DescriptorLayout
 {
-	uint32_t shaderBinding;
 	DescriptorType descriptorType;
-	uint32_t bindingDescriptorCount;
 	ShaderType shaderStageFlags;
+	uint32_t shaderBinding;
+	uint32_t bindingDescriptorCount;
 
 	UniformBuffer* pUniformBuffer = nullptr;
 	uint32_t uniformBufferCount;
@@ -49,6 +49,7 @@ public:
 	DescriptorSet(uint32_t descriptorSetCount);
 	~DescriptorSet();
 
+	static void CreateDescriptorPool();
 	void Init(uint32_t descriptorSetCount);
 
 	void SetupLayout(std::initializer_list<DescriptorLayout> layout);
@@ -64,6 +65,7 @@ public:
 		uint32_t textureCount);
 
 	inline VkPipelineLayout GetPipelineLayout() const { return m_PipelineLayout; }
+	static inline VkDescriptorPool GetDescriptorPool() { return s_DescriptorPool; }
 
 	void Bind(VkCommandBuffer commandBuffer,
 		uint64_t currentFrameIdx,
@@ -71,7 +73,6 @@ public:
 		const uint32_t* pDynamicOffsets);
 
 private:
-	void CreateDescriptorPool();
 	void Cleanup();
 
 private:
@@ -80,6 +81,6 @@ private:
 	std::vector<VkDescriptorSetLayoutBinding> m_LayoutBindings{};
 	VkDescriptorSetLayout m_DescriptorSetLayout{};
 	VkPipelineLayout m_PipelineLayout{};
-	VkDescriptorPool m_DescriptorPool{};
+	static VkDescriptorPool s_DescriptorPool;
 	std::vector<VkDescriptorSet> m_DescriptorSets{};
 };

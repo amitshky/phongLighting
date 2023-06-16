@@ -16,6 +16,8 @@ public:
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 	}
 
+	inline VkPipeline GetPipeline() const { return m_Pipeline; }
+
 private:
 	void Init(const char* vertShaderPath,
 		const char* fragShaderPath,

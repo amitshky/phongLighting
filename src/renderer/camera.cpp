@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
+#include "imgui/imgui.h"
 #include "core/input.h"
 
 // initial values
@@ -37,6 +38,10 @@ Camera::Camera(float aspectRatio)
 
 void Camera::OnUpdate(float deltatime)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureKeyboard)
+		return;
+
 	m_ViewMatrix = glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
 	m_ProjectionMatrix = glm::perspective(m_FOVy, m_AspectRatio, m_ZNear, m_ZFar);
 	// glm was designed for opengl where the y-coord for clip coordinate is flipped

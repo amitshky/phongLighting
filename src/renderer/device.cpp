@@ -66,11 +66,12 @@ void Device::PickPhysicalDevice()
 void Device::CreateLogicalDevice()
 {
 	// create queue
-	QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice, m_WindowSurface);
+	m_QueueFamilyIndices = FindQueueFamilies(m_PhysicalDevice, m_WindowSurface);
 
 	// we have multiple queues so we create a set of unique queue families
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+	std::set<uint32_t> uniqueQueueFamilies = { m_QueueFamilyIndices.graphicsFamily.value(),
+		m_QueueFamilyIndices.presentFamily.value() };
 
 	float queuePriority = 1.0f;
 	for (const auto& queueFamily : uniqueQueueFamilies)
@@ -114,8 +115,8 @@ void Device::CreateLogicalDevice()
 		"Failed to create logcial device!");
 
 	// get the queue handle
-	vkGetDeviceQueue(m_DeviceVk, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
-	vkGetDeviceQueue(m_DeviceVk, indices.presentFamily.value(), 0, &m_PresentQueue);
+	vkGetDeviceQueue(m_DeviceVk, m_QueueFamilyIndices.graphicsFamily.value(), 0, &m_GraphicsQueue);
+	vkGetDeviceQueue(m_DeviceVk, m_QueueFamilyIndices.presentFamily.value(), 0, &m_PresentQueue);
 }
 
 bool Device::IsDeviceSuitable(VkPhysicalDevice physicalDevice)

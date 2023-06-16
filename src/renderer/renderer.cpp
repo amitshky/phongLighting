@@ -11,6 +11,7 @@
 #include "core/core.h"
 #include "renderer/shader.h"
 #include "utils/utils.h"
+#include "ui/imGuiOverlay.h"
 
 
 constexpr uint64_t NUM_CUBES = 3;
@@ -107,6 +108,7 @@ void Renderer::Init(const char* title)
 
 	m_Texture = std::make_unique<Texture2D>("assets/textures/checkerboard.png");
 
+	DescriptorSet::CreateDescriptorPool();
 	m_DescriptorSet = std::make_unique<DescriptorSet>(m_Config.maxFramesInFlight);
 	m_DescriptorSet->SetupLayout({
 		DescriptorSet::CreateLayout(DescriptorType::UNIFORM_BUFFER, //
@@ -147,11 +149,15 @@ void Renderer::Init(const char* title)
 
 	m_Camera = std::make_unique<Camera>(
 		static_cast<float>(m_Swapchain->GetWidth()) / static_cast<float>(m_Swapchain->GetHeight()));
+
+	ImGuiOverlay::Init(m_Config.maxFramesInFlight, m_Swapchain->GetRenderPass());
 }
 
 void Renderer::Cleanup()
 {
 	Device::WaitIdle();
+
+	ImGuiOverlay::Cleanup();
 
 	for (size_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
@@ -177,6 +183,14 @@ void Renderer::Draw(float deltatime)
 	}
 
 	UpdateUniformBuffers(m_CurrentFrameIndex);
+
+	ImGuiOverlay::Begin();
+
+	ImGui::ShowDemoWindow();
+	ImGui::Begin("hello");
+	ImGui::End();
+
+	ImGuiOverlay::End(m_ActiveCommandBuffer);
 
 	EndScene();
 

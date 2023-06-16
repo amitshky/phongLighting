@@ -26,5 +26,8 @@ add_executable(
 
 	editor/ubo.cpp
 
+	ui/imGuiBuild.cpp
+	ui/imGuiOverlay.cpp
+
 	utils/utils.cpp
 )

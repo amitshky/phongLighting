@@ -39,6 +39,7 @@ public:
 
 	static inline VkQueue GetGraphicsQueue() { return s_Instance->m_GraphicsQueue; }
 	static inline VkQueue GetPresentQueue() { return s_Instance->m_PresentQueue; }
+	static inline QueueFamilyIndices GetQueueFamilyIndices() { return s_Instance->m_QueueFamilyIndices; }
 	static inline VkSampleCountFlagBits GetMSAASamplesCount() { return s_Instance->m_MsaaSamples; }
 
 	// waits for the device to finish operations
@@ -68,6 +69,8 @@ private:
 	VkSurfaceKHR m_WindowSurface;
 
 	static std::shared_ptr<Device> s_Instance;
+
+	QueueFamilyIndices m_QueueFamilyIndices;
 
 	VkPhysicalDevice m_PhysicalDevice;
 	VkDevice m_DeviceVk;

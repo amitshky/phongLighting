@@ -3,6 +3,7 @@
 #include <chrono>
 #include "core/core.h"
 #include "core/input.h"
+#include "ui/imGuiOverlay.h"
 
 
 Application* Application::s_Instance = nullptr;
@@ -70,6 +71,11 @@ void Application::Run()
 
 void Application::ProcessInput()
 {
+	// forward input data to ImGui first
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+		return;
+
 	if (Input::IsMouseButtonPressed(Mouse::BUTTON_1))
 	{
 		// hide cursor when moving camera
@@ -94,17 +100,33 @@ void Application::OnResizeEvent(int width, int height)
 
 void Application::OnMouseMoveEvent(double xpos, double ypos)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse)
+		return;
+
 	m_Renderer->OnMouseMove(xpos, ypos);
 }
 
-void Application::OnMouseButtonEvent(int /*unused*/, int /*unused*/, int /*unused*/)
-{}
-
-void Application::OnMouseScrollEvent(double /*unused*/, double /*unused*/)
-{}
-
-void Application::OnKeyEvent(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
+void Application::OnMouseButtonEvent(int button, int action, int mods)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse)
+		return;
+}
+
+void Application::OnMouseScrollEvent(double xoffset, double yoffset)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse)
+		return;
+}
+
+void Application::OnKeyEvent(int key, int scancode, int action, int mods)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureKeyboard)
+		return;
+
 	if (Input::IsKeyPressed(Key::ESCAPE))
 		m_IsRunning = false;
 }
