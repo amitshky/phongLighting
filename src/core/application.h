@@ -41,5 +41,6 @@ private:
 
 	uint32_t m_LastFPS = 0;
 	uint32_t m_FrameCounter = 0;
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_FpsTimepoint{};
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_LastFrameTime{};
 };

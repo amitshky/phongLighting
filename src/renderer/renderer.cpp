@@ -186,7 +186,7 @@ void Renderer::Draw(float deltatime, uint32_t fpsCount)
 	ImGuiOverlay::Begin();
 
 	ImGui::Begin("Profiler");
-	ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / fpsCount), fpsCount);
+	ImGui::Text("%.2f ms/frame (%d fps)", (1000.0f / fpsCount), fpsCount);
 	ImGui::End();
 
 	ImGuiOverlay::End(m_ActiveCommandBuffer);

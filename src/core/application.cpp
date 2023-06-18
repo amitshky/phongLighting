@@ -69,18 +69,23 @@ float Application::CalcDeltaTime()
 	++m_FrameCounter;
 	std::chrono::time_point<std::chrono::high_resolution_clock> currentFrameTime =
 		std::chrono::high_resolution_clock::now();
-	float deltatime =
+
+	float fpsTimer =
+		std::chrono::duration<float, std::chrono::milliseconds::period>(currentFrameTime - m_FpsTimepoint).count();
+
+	float detaltime =
 		std::chrono::duration<float, std::chrono::milliseconds::period>(currentFrameTime - m_LastFrameTime).count();
+	m_LastFrameTime = currentFrameTime;
 
 	// calc fps every 1000ms
-	if (deltatime > 1000.0f)
+	if (fpsTimer > 1000.0f)
 	{
-		m_LastFPS = static_cast<uint32_t>(static_cast<float>(m_FrameCounter) * (1000.0f / deltatime));
+		m_LastFPS = static_cast<uint32_t>(static_cast<float>(m_FrameCounter) * (1000.0f / fpsTimer));
 		m_FrameCounter = 0;
-		m_LastFrameTime = currentFrameTime;
+		m_FpsTimepoint = currentFrameTime;
 	}
 
-	return deltatime;
+	return detaltime;
 }
 
 void Application::ProcessInput()
