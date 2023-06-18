@@ -96,6 +96,13 @@ void Renderer::Init(const char* title)
 
 	m_UniformBuffers.reserve(m_Config.maxFramesInFlight);
 	m_DynamicUniformBuffers.reserve(m_Config.maxFramesInFlight);
+	m_Textures.reserve(NUM_CUBES);
+	std::array<const char*, 3> texturePaths{
+		"assets/textures/texture.jpg",
+		"assets/textures/container.png",
+		"assets/textures/checkerboard.png",
+	};
+
 	for (uint64_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
 		m_UniformBuffers.emplace_back(
@@ -104,14 +111,13 @@ void Renderer::Init(const char* title)
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			m_DUbo.GetAlignment());
 	}
+
+	for (uint64_t i = 0; i < NUM_CUBES; ++i)
+		m_Textures.emplace_back(texturePaths[i % texturePaths.size()]);
+
 	std::vector<VkDescriptorBufferInfo> uniformBufferInfos = UniformBuffer::GetBufferInfos(m_UniformBuffers);
 	std::vector<VkDescriptorBufferInfo> dynamicUniformBufferInfos =
 		UniformBuffer::GetBufferInfos(m_DynamicUniformBuffers);
-
-	m_Textures.reserve(3);
-	m_Textures.emplace_back("assets/textures/texture.jpg");
-	m_Textures.emplace_back("assets/textures/container.png");
-	m_Textures.emplace_back("assets/textures/checkerboard.png");
 	std::vector<VkDescriptorImageInfo> textureImageInfos = Texture2D::GetImageInfos(m_Textures);
 
 	DescriptorSet::CreateDescriptorPool();
