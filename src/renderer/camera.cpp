@@ -49,7 +49,7 @@ void Camera::OnUpdate(float deltatime)
 	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 
 	// movement
-	const float cameraSpeed = 3.0f * deltatime;
+	const float cameraSpeed = 3.0f * (deltatime / 1000.0f);
 	if (Input::IsKeyPressed(Key::W)) // forward
 		m_CameraPos += cameraSpeed * m_CameraFront;
 	else if (Input::IsKeyPressed(Key::S)) // backward

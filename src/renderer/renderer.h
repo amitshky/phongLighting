@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <chrono>
 #include <vulkan/vulkan.h>
 #include "imgui/backends/imgui_impl_vulkan.h"
 #include "renderer/vulkanContext.h"
@@ -25,7 +26,7 @@ public:
 	Renderer(const char* title, const VulkanConfig& config, const std::shared_ptr<Window>& window);
 	~Renderer();
 
-	void Draw(float deltatime);
+	void Draw(float deltatime, uint32_t fpsCount);
 	void OnResize(int width, int height);
 	void OnMouseMove(double xpos, double ypos);
 

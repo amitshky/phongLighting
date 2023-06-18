@@ -166,7 +166,7 @@ void Renderer::Cleanup()
 	}
 }
 
-void Renderer::Draw(float deltatime)
+void Renderer::Draw(float deltatime, uint32_t fpsCount)
 {
 	BeginScene();
 
@@ -185,8 +185,8 @@ void Renderer::Draw(float deltatime)
 
 	ImGuiOverlay::Begin();
 
-	ImGui::ShowDemoWindow();
-	ImGui::Begin("hello");
+	ImGui::Begin("Profiler");
+	ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / fpsCount), fpsCount);
 	ImGui::End();
 
 	ImGuiOverlay::End(m_ActiveCommandBuffer);

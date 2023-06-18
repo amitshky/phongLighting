@@ -33,7 +33,7 @@ void main()
 
 	vec3 cubeColor = texture(uTexSampler, inTexCoord).rgb;
 	vec3 result = (ambientLight + diffuseLight + specularLight) * cubeColor;
-	// result = pow(result.rgb, vec3(1.0 / 2.2));
+	result = pow(result.rgb, vec3(1.0 / 2.2)); // because window surface format = VK_FORMAT_B8G8R8A8_UNORM
 	outColor = vec4(result, 1.0);
 	// outColor = vec4(inTexCoord, 0.0, 1.0);
 }

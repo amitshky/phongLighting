@@ -52,21 +52,35 @@ Application* Application::Create(const char* title)
 
 void Application::Run()
 {
-	static auto lastFrameTime = std::chrono::high_resolution_clock::now();
+	m_LastFrameTime = std::chrono::high_resolution_clock::now();
 
 	while (m_IsRunning)
 	{
-		auto currentFrameTime = std::chrono::high_resolution_clock::now();
-		float deltatime =
-			std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
-		lastFrameTime = currentFrameTime;
+		float deltatime = CalcDeltaTime();
 
-		// printf("\r%8d", static_cast<int32_t>(1 / deltatime));
-
-		m_Renderer->Draw(deltatime);
+		m_Renderer->Draw(deltatime, m_LastFPS);
 		m_Window->OnUpdate();
 		ProcessInput();
 	}
+}
+
+float Application::CalcDeltaTime()
+{
+	++m_FrameCounter;
+	std::chrono::time_point<std::chrono::high_resolution_clock> currentFrameTime =
+		std::chrono::high_resolution_clock::now();
+	float deltatime =
+		std::chrono::duration<float, std::chrono::milliseconds::period>(currentFrameTime - m_LastFrameTime).count();
+
+	// calc fps every 1000ms
+	if (deltatime > 1000.0f)
+	{
+		m_LastFPS = static_cast<uint32_t>(static_cast<float>(m_FrameCounter) * (1000.0f / deltatime));
+		m_FrameCounter = 0;
+		m_LastFrameTime = currentFrameTime;
+	}
+
+	return deltatime;
 }
 
 void Application::ProcessInput()
@@ -123,10 +137,12 @@ void Application::OnMouseScrollEvent(double xoffset, double yoffset)
 
 void Application::OnKeyEvent(int key, int scancode, int action, int mods)
 {
+	// quits the application
+	// works even when the ui is in focus
+	if (Input::IsKeyPressed(Key::LEFT_CONTROL) && Input::IsKeyPressed(Key::Q))
+		m_IsRunning = false;
+
 	ImGuiIO& io = ImGui::GetIO();
 	if (io.WantCaptureKeyboard)
 		return;
-
-	if (Input::IsKeyPressed(Key::ESCAPE))
-		m_IsRunning = false;
 }

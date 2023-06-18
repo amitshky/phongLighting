@@ -358,7 +358,8 @@ VkSurfaceFormatKHR Swapchain::ChooseSurfaceFormat(const std::vector<VkSurfaceFor
 {
 	for (const auto& format : availableFormats)
 	{
-		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		// NOTE: `VK_FORMAT_B8G8R8A8_UNORM` has been used here because of imgui
+		if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return format;
 	}
 

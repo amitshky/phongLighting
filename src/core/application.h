@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include "core/window.h"
 #include "renderer/renderer.h"
 
@@ -21,9 +22,10 @@ private:
 	explicit Application(const char* title, uint32_t width = 1280, uint32_t height = 720);
 
 	void Init(const char* title);
+	float CalcDeltaTime(); // deltatime in milliseconds
+
 	// TODO: refactor to use OnEvent()
 	void ProcessInput();
-
 	void OnCloseEvent();
 	void OnResizeEvent(int width, int height);
 	void OnMouseMoveEvent(double xpos, double ypos);
@@ -36,4 +38,8 @@ private:
 	static Application* s_Instance;
 	std::shared_ptr<Window> m_Window;
 	std::unique_ptr<Renderer> m_Renderer;
+
+	uint32_t m_LastFPS = 0;
+	uint32_t m_FrameCounter = 0;
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_LastFrameTime{};
 };
