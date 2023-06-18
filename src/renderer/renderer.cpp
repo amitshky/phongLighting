@@ -13,7 +13,6 @@
 #include "utils/utils.h"
 #include "ui/imGuiOverlay.h"
 
-
 constexpr uint64_t NUM_CUBES = 3;
 
 const std::vector<Vertex> vertexData{
@@ -295,5 +294,6 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 		glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
 		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
 	}
+
 	m_DynamicUniformBuffers[currentFrameIndex].Map(m_DUbo.buffer);
 }

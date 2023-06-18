@@ -26,8 +26,15 @@ add_executable(
 
 	editor/ubo.cpp
 
-	ui/imGuiBuild.cpp
 	ui/imGuiOverlay.cpp
 
 	utils/utils.cpp
+
+	../lib/imgui/imgui.cpp
+	../lib/imgui/imgui_demo.cpp
+	../lib/imgui/imgui_draw.cpp
+	../lib/imgui/imgui_tables.cpp
+	../lib/imgui/imgui_widgets.cpp
+	../lib/imgui/backends/imgui_impl_glfw.cpp
+	../lib/imgui/backends/imgui_impl_vulkan.cpp
 )
