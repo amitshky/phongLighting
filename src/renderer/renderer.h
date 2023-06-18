@@ -56,7 +56,7 @@ private:
 	DynamicUniformBufferObject m_DUbo{};
 	std::vector<UniformBuffer> m_UniformBuffers{};
 	std::vector<UniformBuffer> m_DynamicUniformBuffers{};
-	std::unique_ptr<Texture2D> m_Texture{};
+	std::vector<Texture2D> m_Textures{};
 	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
 
 	std::unique_ptr<Pipeline> m_Pipeline{};

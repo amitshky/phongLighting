@@ -1,6 +1,8 @@
 #version 450
 
-layout(binding = 2) uniform sampler2D uTexSampler;
+// layout(binding = 2) uniform sampler2D uTexSampler;
+layout(binding = 2) uniform texture2D uTextures[3];
+layout(binding = 3) uniform sampler uSampler;
 
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec2 inTexCoord;
@@ -9,6 +11,12 @@ layout(location = 3) in vec3 inViewPos;
 layout(location = 4) in vec3 inLightPos;
 
 layout(location = 0) out vec4 outColor;
+
+layout(push_constant) uniform PerObject
+{
+	int imgIndex;
+}
+pc;
 
 void main()
 {
@@ -31,7 +39,7 @@ void main()
 	vec3 halfwayDir = normalize(lightDir + viewDir);
 	vec3 specularLight = specularStrength * pow(max(dot(norm, halfwayDir), 0.0), shininess) * lightColor;
 
-	vec3 cubeColor = texture(uTexSampler, inTexCoord).rgb;
+	vec3 cubeColor = texture(sampler2D(uTextures[pc.imgIndex], uSampler), inTexCoord).rgb;
 	vec3 result = (ambientLight + diffuseLight + specularLight) * cubeColor;
 	result = pow(result.rgb, vec3(1.0 / 2.2)); // because window surface format = VK_FORMAT_B8G8R8A8_UNORM
 	outColor = vec4(result, 1.0);

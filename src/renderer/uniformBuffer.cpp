@@ -22,3 +22,14 @@ UniformBuffer::~UniformBuffer()
 	vkFreeMemory(Device::GetDevice(), m_UniformBufferMemory, nullptr);
 	vkDestroyBuffer(Device::GetDevice(), m_UniformBuffer, nullptr);
 }
+
+std::vector<VkDescriptorBufferInfo> UniformBuffer::GetBufferInfos(const std::vector<UniformBuffer>& uniformBuffers)
+{
+	std::vector<VkDescriptorBufferInfo> bufferInfos{};
+	bufferInfos.reserve(uniformBuffers.size());
+
+	for (const auto& uniformBuffer : uniformBuffers)
+		bufferInfos.push_back(uniformBuffer.m_BufferInfo);
+
+	return bufferInfos;
+}

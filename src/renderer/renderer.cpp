@@ -104,36 +104,47 @@ void Renderer::Init(const char* title)
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			m_DUbo.GetAlignment());
 	}
+	std::vector<VkDescriptorBufferInfo> uniformBufferInfos = UniformBuffer::GetBufferInfos(m_UniformBuffers);
+	std::vector<VkDescriptorBufferInfo> dynamicUniformBufferInfos =
+		UniformBuffer::GetBufferInfos(m_DynamicUniformBuffers);
 
-	m_Texture = std::make_unique<Texture2D>("assets/textures/checkerboard.png");
+	m_Textures.reserve(3);
+	m_Textures.emplace_back("assets/textures/texture.jpg");
+	m_Textures.emplace_back("assets/textures/container.png");
+	m_Textures.emplace_back("assets/textures/checkerboard.png");
+	std::vector<VkDescriptorImageInfo> textureImageInfos = Texture2D::GetImageInfos(m_Textures);
 
 	DescriptorSet::CreateDescriptorPool();
 	m_DescriptorSet = std::make_unique<DescriptorSet>(m_Config.maxFramesInFlight);
 	m_DescriptorSet->SetupLayout({
-		DescriptorSet::CreateLayout(DescriptorType::UNIFORM_BUFFER, //
+		DescriptorSet::CreateLayout( //
+			DescriptorType::UNIFORM_BUFFER,
 			ShaderType::VERTEX,
 			0,
 			1,
-			m_UniformBuffers.data(),
-			static_cast<uint32_t>(m_UniformBuffers.size()),
-			nullptr,
-			0), //
-		DescriptorSet::CreateLayout(DescriptorType::UNIFORM_BUFFER_DYNAMIC, //
+			uniformBufferInfos.data(),
+			nullptr), //
+		DescriptorSet::CreateLayout( //
+			DescriptorType::UNIFORM_BUFFER_DYNAMIC,
 			ShaderType::VERTEX,
 			1,
 			1,
-			m_DynamicUniformBuffers.data(),
-			static_cast<uint32_t>(m_DynamicUniformBuffers.size()),
-			nullptr,
-			0), //
-		DescriptorSet::CreateLayout(DescriptorType::COMBINED_IMAGE_SAMPLER, //
+			dynamicUniformBufferInfos.data(),
+			nullptr), //
+		DescriptorSet::CreateLayout( //
+			DescriptorType::SAMPLED_IMAGE,
 			ShaderType::FRAGMENT,
 			2,
+			static_cast<uint32_t>(m_Textures.size()),
+			nullptr,
+			textureImageInfos.data()), //
+		DescriptorSet::CreateLayout( //
+			DescriptorType::SAMPLER,
+			ShaderType::FRAGMENT,
+			3,
 			1,
 			nullptr,
-			0,
-			m_Texture.get(),
-			1) //
+			&textureImageInfos[0]), // we only need the sampler
 	});
 	m_DescriptorSet->Create();
 
@@ -177,6 +188,7 @@ void Renderer::Draw(float deltatime, uint32_t fpsCount)
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)
 	{
 		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
+		m_DescriptorSet->PushConstants(m_ActiveCommandBuffer, m_CurrentFrameIndex, &i);
 		m_DescriptorSet->Bind(m_ActiveCommandBuffer, m_CurrentFrameIndex, 1, &dynamicOffset);
 		m_IndexBuffer->Draw(m_ActiveCommandBuffer);
 	}
@@ -194,6 +206,30 @@ void Renderer::Draw(float deltatime, uint32_t fpsCount)
 	EndScene();
 
 	m_Camera->OnUpdate(deltatime);
+}
+
+void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	m_Ubo.lightPos = glm::vec3(0.0f, 0.0f, 20.0f);
+	m_Ubo.viewPos = m_Camera->GetCameraPosition();
+	m_Ubo.viewProjMat = m_Camera->GetViewProjectionMatrix();
+	m_UniformBuffers[currentFrameIndex].Map(&m_Ubo);
+
+	for (uint64_t i = 0; i < NUM_CUBES; ++i)
+	{
+		// get a pointer to the aligned offset
+		glm::mat4* modelMatPtr = m_DUbo.GetModelMatPtr(i);
+		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f))
+					   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
+		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
+	}
+
+	m_DynamicUniformBuffers[currentFrameIndex].Map(m_DUbo.buffer);
 }
 
 void Renderer::OnResize(int /*unused*/, int /*unused*/)
@@ -272,28 +308,4 @@ void Renderer::CreateSyncObjects()
 				  || vkCreateFence(Device::GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS,
 			"Failed to create synchronization objects!")
 	}
-}
-
-void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
-{
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-	m_Ubo.lightPos = glm::vec3(0.0f, 0.0f, 2.0f);
-	m_Ubo.viewPos = m_Camera->GetCameraPosition();
-	m_Ubo.viewProjMat = m_Camera->GetViewProjectionMatrix();
-	m_UniformBuffers[currentFrameIndex].Map(&m_Ubo);
-
-	for (uint64_t i = 0; i < NUM_CUBES; ++i)
-	{
-		// get a pointer to the aligned offset
-		glm::mat4* modelMatPtr = m_DUbo.GetModelMatPtr(i);
-		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f))
-					   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
-		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
-	}
-
-	m_DynamicUniformBuffers[currentFrameIndex].Map(m_DUbo.buffer);
 }

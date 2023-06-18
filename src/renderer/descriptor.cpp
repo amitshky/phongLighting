@@ -65,37 +65,12 @@ void DescriptorSet::SetupLayout(std::initializer_list<DescriptorLayout> layout)
 		VkDescriptorSetLayoutBinding layoutBinding{};
 		layoutBinding.binding = l.shaderBinding; // binding in the shader
 		layoutBinding.descriptorType = static_cast<VkDescriptorType>(l.descriptorType);
-		layoutBinding.descriptorCount = l.bindingDescriptorCount;
+		layoutBinding.descriptorCount = l.descriptorCount;
 		layoutBinding.stageFlags = static_cast<VkShaderStageFlags>(l.shaderStageFlags);
 		layoutBinding.pImmutableSamplers = nullptr;
 
 		m_LayoutBindings.push_back(layoutBinding);
 	}
-
-	// // uniform buffer
-	// VkDescriptorSetLayoutBinding uboLayout{};
-	// uboLayout.binding = 0; // binding in the shader
-	// uboLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	// uboLayout.descriptorCount = 1;
-	// uboLayout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	// uboLayout.pImmutableSamplers = nullptr;
-	// // dynamic ubo for per-object data
-	// VkDescriptorSetLayoutBinding dUboLayout{};
-	// dUboLayout.binding = 1; // binding in the shader
-	// dUboLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	// dUboLayout.descriptorCount = 1;
-	// dUboLayout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	// dUboLayout.pImmutableSamplers = nullptr;
-
-	// // combined image sampler // for textures
-	// VkDescriptorSetLayoutBinding imgSamplerLayout{};
-	// imgSamplerLayout.binding = 2; // binding in the shader
-	// imgSamplerLayout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	// imgSamplerLayout.descriptorCount = 1;
-	// imgSamplerLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	// imgSamplerLayout.pImmutableSamplers = nullptr;
-
-	// std::array<VkDescriptorSetLayoutBinding, 3> bindings{ uboLayout, dUboLayout, imgSamplerLayout };
 
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
 	descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -106,37 +81,20 @@ void DescriptorSet::SetupLayout(std::initializer_list<DescriptorLayout> layout)
 			  != VK_SUCCESS,
 		"Failed to create descriptor set layout!");
 
+	VkPushConstantRange pushConstantRange{};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(int32_t);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
 	THROW(vkCreatePipelineLayout(Device::GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS,
 		"Failed to create pipeline layout!");
-}
-
-DescriptorLayout DescriptorSet::CreateLayout(DescriptorType descriptorType,
-	ShaderType shaderStage,
-	uint32_t shaderBinding,
-	uint32_t bindingDescriptorCount,
-	UniformBuffer* pUniformBuffer,
-	uint32_t uniformBufferCount,
-	Texture2D* pTexture,
-	uint32_t textureCount)
-{
-	DescriptorLayout layout{};
-	layout.shaderBinding = shaderBinding;
-	layout.descriptorType = descriptorType;
-	layout.bindingDescriptorCount = bindingDescriptorCount;
-	layout.shaderStageFlags = shaderStage;
-	layout.pUniformBuffer = pUniformBuffer;
-	layout.uniformBufferCount = uniformBufferCount;
-	layout.pTexture = pTexture;
-	layout.textureCount = textureCount;
-
-	return layout;
 }
 
 void DescriptorSet::Create()
@@ -158,8 +116,8 @@ void DescriptorSet::Create()
 	for (uint64_t i = 0; i < m_DescriptorSetCount; ++i)
 	{
 		std::vector<VkWriteDescriptorSet> descriptorWrites{};
-		descriptorWrites.reserve(m_DescriptorLayout.size());
 
+		descriptorWrites.reserve(m_DescriptorLayout.size());
 		for (auto& layout : m_DescriptorLayout)
 		{
 			VkWriteDescriptorSet descWrite{};
@@ -168,61 +126,32 @@ void DescriptorSet::Create()
 			descWrite.dstBinding = layout.shaderBinding;
 			descWrite.dstArrayElement = 0;
 			descWrite.descriptorType = static_cast<VkDescriptorType>(layout.descriptorType);
-			descWrite.descriptorCount = layout.bindingDescriptorCount;
-			descWrite.pBufferInfo = layout.pUniformBuffer == nullptr
-										? nullptr
-										: &(layout.pUniformBuffer[i % layout.uniformBufferCount].GetBufferInfo());
-			descWrite.pImageInfo =
-				layout.pTexture == nullptr ? nullptr : &(layout.pTexture[i % layout.textureCount].GetImageInfo());
+			descWrite.descriptorCount = layout.descriptorCount;
+			descWrite.pBufferInfo = layout.pBufferInfos == nullptr ? nullptr : &layout.pBufferInfos[i];
+			descWrite.pImageInfo = layout.pImageInfos == nullptr ? nullptr : layout.pImageInfos;
 
 			descriptorWrites.push_back(descWrite);
 		}
-
-
-		// descriptorWrites.resize(m_DescriptorLayout.size());
-		// descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		// descriptorWrites[0].dstSet = m_DescriptorSets[i];
-		// descriptorWrites[0].dstBinding = 0;
-		// descriptorWrites[0].dstArrayElement = 0;
-		// descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		// descriptorWrites[0].descriptorCount = 1;
-		// descriptorWrites[0].pBufferInfo =
-		// 	&(m_DescriptorLayout[0].pUniformBuffer[i % m_DescriptorLayout[0].uniformBufferCount].GetBufferInfo());
-		// // for dynamic ubo
-		// descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		// descriptorWrites[1].dstSet = m_DescriptorSets[i];
-		// descriptorWrites[1].dstBinding = 1;
-		// descriptorWrites[1].dstArrayElement = 0;
-		// descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-		// descriptorWrites[1].descriptorCount = 1;
-		// descriptorWrites[1].pBufferInfo =
-		// 	&(m_DescriptorLayout[1].pUniformBuffer[i % m_DescriptorLayout[1].uniformBufferCount].GetBufferInfo());
-		// // combined image sampler // for textures
-		// descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		// descriptorWrites[2].dstSet = m_DescriptorSets[i];
-		// descriptorWrites[2].dstBinding = 2;
-		// descriptorWrites[2].dstArrayElement = 0;
-		// descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		// descriptorWrites[2].descriptorCount = 1;
-		// descriptorWrites[2].pImageInfo =
-		// 	&(m_DescriptorLayout[2].pTexture[i % m_DescriptorLayout[2].textureCount].GetImageInfo());
 
 		vkUpdateDescriptorSets(
 			Device::GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }
 
-void DescriptorSet::Bind(VkCommandBuffer commandBuffer,
-	uint64_t currentFrameIdx,
-	uint32_t dynamicOffsetCount,
-	const uint32_t* pDynamicOffsets)
+DescriptorLayout DescriptorSet::CreateLayout(DescriptorType descriptorType,
+	ShaderType shaderStage,
+	uint32_t shaderBinding,
+	uint32_t descriptorCount,
+	VkDescriptorBufferInfo* pBufferInfos,
+	VkDescriptorImageInfo* pImageInfos)
 {
-	vkCmdBindDescriptorSets(commandBuffer,
-		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_PipelineLayout,
-		0,
-		1,
-		&m_DescriptorSets[currentFrameIdx],
-		dynamicOffsetCount,
-		pDynamicOffsets);
+	DescriptorLayout layout{};
+	layout.shaderBinding = shaderBinding;
+	layout.descriptorType = descriptorType;
+	layout.descriptorCount = descriptorCount;
+	layout.shaderStageFlags = shaderStage;
+	layout.pBufferInfos = pBufferInfos;
+	layout.pImageInfos = pImageInfos;
+
+	return layout;
 }

@@ -10,7 +10,9 @@
 
 enum class DescriptorType
 {
+	SAMPLER = VK_DESCRIPTOR_TYPE_SAMPLER,
 	COMBINED_IMAGE_SAMPLER = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+	SAMPLED_IMAGE = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 	UNIFORM_BUFFER = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 	STORAGE_BUFFER = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 	UNIFORM_BUFFER_DYNAMIC = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
@@ -22,12 +24,10 @@ struct DescriptorLayout
 	DescriptorType descriptorType;
 	ShaderType shaderStageFlags;
 	uint32_t shaderBinding;
-	uint32_t bindingDescriptorCount;
+	uint32_t descriptorCount;
 
-	UniformBuffer* pUniformBuffer = nullptr;
-	uint32_t uniformBufferCount;
-	Texture2D* pTexture = nullptr;
-	uint32_t textureCount;
+	VkDescriptorBufferInfo* pBufferInfos = nullptr;
+	VkDescriptorImageInfo* pImageInfos = nullptr;
 };
 
 class DescriptorPool
@@ -58,19 +58,33 @@ public:
 	static DescriptorLayout CreateLayout(DescriptorType descriptorType,
 		ShaderType shaderStage,
 		uint32_t shaderBinding,
-		uint32_t bindingDescriptorCount,
-		UniformBuffer* pUniformBuffer,
-		uint32_t uniformBufferCount,
-		Texture2D* pTexture,
-		uint32_t textureCount);
+		uint32_t descriptorCount,
+		VkDescriptorBufferInfo* pBufferInfos,
+		VkDescriptorImageInfo* pImageInfos);
 
 	inline VkPipelineLayout GetPipelineLayout() const { return m_PipelineLayout; }
 	static inline VkDescriptorPool GetDescriptorPool() { return s_DescriptorPool; }
 
-	void Bind(VkCommandBuffer commandBuffer,
+	inline void Bind(VkCommandBuffer commandBuffer,
 		uint64_t currentFrameIdx,
 		uint32_t dynamicOffsetCount,
-		const uint32_t* pDynamicOffsets);
+		const uint32_t* pDynamicOffsets)
+	{
+		vkCmdBindDescriptorSets(commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_PipelineLayout,
+			0,
+			1,
+			&m_DescriptorSets[currentFrameIdx],
+			dynamicOffsetCount,
+			pDynamicOffsets);
+	}
+
+	inline void PushConstants(VkCommandBuffer commandBuffer, uint64_t currentFrameIdx, const void* pValues)
+	{
+		vkCmdPushConstants(commandBuffer, m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int32_t), pValues);
+	}
+
 
 private:
 	void Cleanup();

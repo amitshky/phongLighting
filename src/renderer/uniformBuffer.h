@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include <cstring>
+#include <vector>
+#include <vulkan/vulkan.h>
 
 
 class UniformBuffer
@@ -12,6 +13,8 @@ public:
 
 	inline VkDescriptorBufferInfo& GetBufferInfo() { return m_BufferInfo; }
 	inline void Map(const void* src) { memcpy(m_UniformBufferMapped, src, m_BufferSize); }
+
+	static std::vector<VkDescriptorBufferInfo> GetBufferInfos(const std::vector<UniformBuffer>& uniformBuffers);
 
 private:
 	VkDeviceSize m_BufferSize;

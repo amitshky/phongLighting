@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <vulkan/vulkan.h>
 
 
@@ -10,6 +11,8 @@ public:
 	~Texture2D();
 
 	inline VkDescriptorImageInfo& GetImageInfo() { return m_ImageInfo; }
+
+	static std::vector<VkDescriptorImageInfo> GetImageInfos(const std::vector<Texture2D>& textures);
 
 private:
 	void CreateTextureImage(const char* texturePath);

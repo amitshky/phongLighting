@@ -26,6 +26,18 @@ Texture2D::~Texture2D()
 	vkDestroyImage(Device::GetDevice(), m_TextureImage, nullptr);
 }
 
+std::vector<VkDescriptorImageInfo> Texture2D::GetImageInfos(const std::vector<Texture2D>& textures)
+{
+	std::vector<VkDescriptorImageInfo> imageInfos{};
+	imageInfos.reserve(textures.size());
+
+	for (const auto& texture : textures)
+		imageInfos.push_back(texture.m_ImageInfo);
+
+	return imageInfos;
+}
+
+
 void Texture2D::CreateTextureImage(const char* texturePath)
 {
 	int width = 0, height = 0, channels = 0;
