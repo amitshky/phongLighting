@@ -1,7 +1,6 @@
 #include "renderer/renderer.h"
 
 #include <array>
-#include <numeric>
 #include <chrono>
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -94,14 +93,14 @@ void Renderer::Init(const char* title)
 	VkDeviceSize minAlignment = Device::GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
 	m_DUbo.Init(minAlignment, NUM_CUBES);
 
+	std::array<const char*, 2> texturePaths{
+		"assets/textures/container.png",
+		"assets/textures/container_specular.png",
+	};
+
 	m_UniformBuffers.reserve(m_Config.maxFramesInFlight);
 	m_DynamicUniformBuffers.reserve(m_Config.maxFramesInFlight);
-	m_Textures.reserve(NUM_CUBES);
-	std::array<const char*, 3> texturePaths{
-		"assets/textures/texture.jpg",
-		"assets/textures/container.png",
-		"assets/textures/checkerboard.png",
-	};
+	m_Textures.reserve(texturePaths.size());
 
 	for (uint64_t i = 0; i < m_Config.maxFramesInFlight; ++i)
 	{
@@ -112,8 +111,8 @@ void Renderer::Init(const char* title)
 			m_DUbo.GetAlignment());
 	}
 
-	for (uint64_t i = 0; i < NUM_CUBES; ++i)
-		m_Textures.emplace_back(texturePaths[i % texturePaths.size()]);
+	for (const auto& texturePath : texturePaths)
+		m_Textures.emplace_back(texturePath);
 
 	std::vector<VkDescriptorBufferInfo> uniformBufferInfos = UniformBuffer::GetBufferInfos(m_UniformBuffers);
 	std::vector<VkDescriptorBufferInfo> dynamicUniformBufferInfos =
@@ -194,7 +193,6 @@ void Renderer::Draw(float deltatime, uint32_t fpsCount)
 	for (uint64_t i = 0; i < NUM_CUBES; ++i)
 	{
 		uint32_t dynamicOffset = i * m_DUbo.GetAlignment();
-		m_DescriptorSet->PushConstants(m_ActiveCommandBuffer, m_CurrentFrameIndex, &i);
 		m_DescriptorSet->Bind(m_ActiveCommandBuffer, m_CurrentFrameIndex, 1, &dynamicOffset);
 		m_IndexBuffer->Draw(m_ActiveCommandBuffer);
 	}

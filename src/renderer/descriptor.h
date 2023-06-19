@@ -51,6 +51,7 @@ public:
 
 	static void CreateDescriptorPool();
 	void Init(uint32_t descriptorSetCount);
+	void Cleanup();
 
 	void SetupLayout(std::initializer_list<DescriptorLayout> layout);
 	void Create();
@@ -84,10 +85,6 @@ public:
 	{
 		vkCmdPushConstants(commandBuffer, m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int32_t), pValues);
 	}
-
-
-private:
-	void Cleanup();
 
 private:
 	uint32_t m_DescriptorSetCount = 0;
