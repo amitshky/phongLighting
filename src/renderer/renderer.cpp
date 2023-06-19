@@ -89,7 +89,8 @@ void Renderer::Init(const char* title)
 	m_VertexBuffer = std::make_unique<VertexBuffer>(vertices);
 	m_IndexBuffer = std::make_unique<IndexBuffer>(indices);
 
-	VkDeviceSize uboSize = static_cast<uint64_t>(sizeof(UniformBufferObject));
+	VkDeviceSize uboSize = sizeof(UniformBufferObject);
+	VkDeviceSize lightCubeUboSize = sizeof(LightCubeUBO);
 	VkDeviceSize minAlignment = Device::GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
 	m_DUbo.Init(minAlignment, NUM_CUBES);
 
@@ -100,6 +101,7 @@ void Renderer::Init(const char* title)
 
 	m_UniformBuffers.reserve(m_Config.maxFramesInFlight);
 	m_DynamicUniformBuffers.reserve(m_Config.maxFramesInFlight);
+	m_LightCubeUniformBuffers.reserve(m_Config.maxFramesInFlight);
 	m_Textures.reserve(texturePaths.size());
 
 	for (uint64_t i = 0; i < m_Config.maxFramesInFlight; ++i)
@@ -109,6 +111,9 @@ void Renderer::Init(const char* title)
 		m_DynamicUniformBuffers.emplace_back(m_DUbo.GetBufferSize(),
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			m_DUbo.GetAlignment());
+		m_LightCubeUniformBuffers.emplace_back(lightCubeUboSize,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			lightCubeUboSize);
 	}
 
 	for (const auto& texturePath : texturePaths)
@@ -119,7 +124,8 @@ void Renderer::Init(const char* title)
 		UniformBuffer::GetBufferInfos(m_DynamicUniformBuffers);
 	std::vector<VkDescriptorImageInfo> textureImageInfos = Texture2D::GetImageInfos(m_Textures);
 
-	DescriptorSet::CreateDescriptorPool();
+	DescriptorPool::Init();
+
 	m_DescriptorSet = std::make_unique<DescriptorSet>(m_Config.maxFramesInFlight);
 	m_DescriptorSet->SetupLayout({
 		DescriptorSet::CreateLayout( //
@@ -152,10 +158,28 @@ void Renderer::Init(const char* title)
 			&textureImageInfos[0]), // we only need the sampler
 	});
 	m_DescriptorSet->Create();
-
 	m_Pipeline = std::make_unique<Pipeline>("assets/shaders/cube.vert.spv",
 		"assets/shaders/cube.frag.spv",
 		m_DescriptorSet->GetPipelineLayout(),
+		m_Swapchain->GetRenderPass());
+
+	std::vector<VkDescriptorBufferInfo> lightCubeUBOBufferInfos =
+		UniformBuffer::GetBufferInfos(m_LightCubeUniformBuffers);
+
+	m_LightCubeDescriptorSet = std::make_unique<DescriptorSet>(m_Config.maxFramesInFlight);
+	m_LightCubeDescriptorSet->SetupLayout({
+		DescriptorSet::CreateLayout( //
+			DescriptorType::UNIFORM_BUFFER,
+			ShaderType::VERTEX,
+			0,
+			1,
+			lightCubeUBOBufferInfos.data(),
+			nullptr), //
+	});
+	m_LightCubeDescriptorSet->Create();
+	m_LightCubePipeline = std::make_unique<Pipeline>("assets/shaders/lightCube.vert.spv",
+		"assets/shaders/lightCube.frag.spv",
+		m_LightCubeDescriptorSet->GetPipelineLayout(),
 		m_Swapchain->GetRenderPass());
 
 	m_CommandBuffer = std::make_unique<CommandBuffer>(m_Config.maxFramesInFlight);
@@ -180,6 +204,8 @@ void Renderer::Cleanup()
 		vkDestroySemaphore(Device::GetDevice(), m_RenderFinishedSemaphores[i], nullptr);
 		vkDestroyFence(Device::GetDevice(), m_InFlightFences[i], nullptr);
 	}
+
+	DescriptorPool::Cleanup();
 }
 
 void Renderer::Draw(float deltatime, uint32_t fpsCount)
@@ -196,6 +222,11 @@ void Renderer::Draw(float deltatime, uint32_t fpsCount)
 		m_DescriptorSet->Bind(m_ActiveCommandBuffer, m_CurrentFrameIndex, 1, &dynamicOffset);
 		m_IndexBuffer->Draw(m_ActiveCommandBuffer);
 	}
+
+	// light cube
+	m_LightCubePipeline->Bind(m_ActiveCommandBuffer);
+	m_LightCubeDescriptorSet->Bind(m_ActiveCommandBuffer, m_CurrentFrameIndex, 0, nullptr);
+	m_IndexBuffer->Draw(m_ActiveCommandBuffer);
 
 	UpdateUniformBuffers(m_CurrentFrameIndex);
 
@@ -218,7 +249,9 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	m_Ubo.lightPos = glm::vec3(0.0f, 0.0f, 20.0f);
+	glm::vec3 lightPos{ 0.0f, 0.8f, 1.5f };
+
+	m_Ubo.lightPos = lightPos;
 	m_Ubo.viewPos = m_Camera->GetCameraPosition();
 	m_Ubo.viewProjMat = m_Camera->GetViewProjectionMatrix();
 	m_UniformBuffers[currentFrameIndex].Map(&m_Ubo);
@@ -227,13 +260,19 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 	{
 		// get a pointer to the aligned offset
 		glm::mat4* modelMatPtr = m_DUbo.GetModelMatPtr(i);
-		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f))
-					   * glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(i * 2 - 2.0f, 0.0f, 0.0f));
+		*modelMatPtr = glm::rotate(*modelMatPtr, time * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
 		*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
 	}
 
 	m_DynamicUniformBuffers[currentFrameIndex].Map(m_DUbo.buffer);
+
+	// light cube
+	m_LightCubeUbo.transformationMat = m_Camera->GetViewProjectionMatrix();
+	m_LightCubeUbo.transformationMat = glm::translate(m_LightCubeUbo.transformationMat, lightPos);
+	m_LightCubeUbo.transformationMat = glm::scale(m_LightCubeUbo.transformationMat, glm::vec3(0.2f));
+	m_LightCubeUniformBuffers[currentFrameIndex].Map(&m_LightCubeUbo);
 }
 
 void Renderer::OnResize(int /*unused*/, int /*unused*/)

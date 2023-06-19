@@ -27,7 +27,7 @@ void ImGuiOverlay::Init(uint32_t imageCount, VkRenderPass renderPass)
 	info.Device = Device::GetDevice();
 	info.QueueFamily = Device::GetQueueFamilyIndices().graphicsFamily.value();
 	info.Queue = Device::GetGraphicsQueue();
-	info.DescriptorPool = DescriptorSet::GetDescriptorPool();
+	info.DescriptorPool = DescriptorPool::Get();
 	info.PipelineCache = VK_NULL_HANDLE;
 	info.Subpass = 0;
 	info.MinImageCount = imageCount;

@@ -59,7 +59,13 @@ private:
 	std::vector<Texture2D> m_Textures{};
 	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
 
+	LightCubeUBO m_LightCubeUbo{};
+	std::vector<UniformBuffer> m_LightCubeUniformBuffers{};
+	std::unique_ptr<DescriptorSet> m_LightCubeDescriptorSet{};
+
 	std::unique_ptr<Pipeline> m_Pipeline{};
+	std::unique_ptr<Pipeline> m_LightCubePipeline{};
+
 	std::unique_ptr<CommandBuffer> m_CommandBuffer{};
 
 	// synchronization objects

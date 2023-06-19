@@ -23,14 +23,14 @@ void main()
 	vec3 ambientLight = lightColor * ambientStrength * diffuseTex.rgb;
 
 	// diffuse light
-	float diffuseStrength = 1.0;
+	float diffuseStrength = 0.8;
 	vec3 norm = normalize(inNormal);
 	vec3 lightDir = normalize(inLightPos - inFragPos);
 	vec3 diffuseLight = diffuseStrength * max(dot(lightDir, norm), 0.0) * lightColor * diffuseTex.rgb;
 
 	// spcular light
 	float specularStrength = 1.0;
-	int shininess = 64;
+	int shininess = 128;
 	vec3 viewDir = normalize(inViewPos - inFragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
 	vec3 specularLight =

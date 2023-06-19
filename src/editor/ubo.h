@@ -75,3 +75,8 @@ private:
 	uint64_t m_AlignmentSize = 0;
 	uint64_t m_Size = 0;
 };
+
+struct LightCubeUBO
+{
+	glm::mat4 transformationMat;
+};

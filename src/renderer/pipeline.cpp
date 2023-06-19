@@ -26,8 +26,8 @@ void Pipeline::Init(const char* vertShaderPath,
 	VkRenderPass renderPass)
 {
 	// shader stages
-	Shader vertexShader{ "assets/shaders/cube.vert.spv", ShaderType::VERTEX };
-	Shader fragmentShader{ "assets/shaders/cube.frag.spv", ShaderType::FRAGMENT };
+	Shader vertexShader{ vertShaderPath, ShaderType::VERTEX };
+	Shader fragmentShader{ fragShaderPath, ShaderType::FRAGMENT };
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{ vertexShader.GetShaderStage(),
 		fragmentShader.GetShaderStage() };
 

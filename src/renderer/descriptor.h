@@ -33,14 +33,12 @@ struct DescriptorLayout
 class DescriptorPool
 {
 public:
-	DescriptorPool();
-	~DescriptorPool();
+	static void Init();
+	static void Cleanup();
+	static inline VkDescriptorPool Get() { return s_DescriptorPool; }
 
 private:
-	void CreateDescriptorPool();
-
-private:
-	VkDescriptorPool m_DescriptorPool;
+	static VkDescriptorPool s_DescriptorPool;
 };
 
 class DescriptorSet
@@ -64,7 +62,6 @@ public:
 		VkDescriptorImageInfo* pImageInfos);
 
 	inline VkPipelineLayout GetPipelineLayout() const { return m_PipelineLayout; }
-	static inline VkDescriptorPool GetDescriptorPool() { return s_DescriptorPool; }
 
 	inline void Bind(VkCommandBuffer commandBuffer,
 		uint64_t currentFrameIdx,
@@ -92,6 +89,5 @@ private:
 	std::vector<VkDescriptorSetLayoutBinding> m_LayoutBindings{};
 	VkDescriptorSetLayout m_DescriptorSetLayout{};
 	VkPipelineLayout m_PipelineLayout{};
-	static VkDescriptorPool s_DescriptorPool;
 	std::vector<VkDescriptorSet> m_DescriptorSets{};
 };

@@ -5,19 +5,9 @@
 #include "renderer/device.h"
 
 
-VkDescriptorPool DescriptorSet::s_DescriptorPool{};
+VkDescriptorPool DescriptorPool::s_DescriptorPool{};
 
-DescriptorSet::DescriptorSet(uint32_t descriptorSetCount)
-{
-	Init(descriptorSetCount);
-}
-
-DescriptorSet::~DescriptorSet()
-{
-	Cleanup();
-}
-
-void DescriptorSet::CreateDescriptorPool()
+void DescriptorPool::Init()
 {
 	VkDescriptorPoolSize poolSizes[] = {
 		{VK_DESCRIPTOR_TYPE_SAMPLER,                 100},
@@ -44,6 +34,22 @@ void DescriptorSet::CreateDescriptorPool()
 		"Failed to create descriptor pool!");
 }
 
+void DescriptorPool::Cleanup()
+{
+	vkDestroyDescriptorPool(Device::GetDevice(), s_DescriptorPool, nullptr);
+}
+
+
+DescriptorSet::DescriptorSet(uint32_t descriptorSetCount)
+{
+	Init(descriptorSetCount);
+}
+
+DescriptorSet::~DescriptorSet()
+{
+	Cleanup();
+}
+
 void DescriptorSet::Init(uint32_t descriptorSetCount)
 {
 	m_DescriptorSetCount = descriptorSetCount;
@@ -51,7 +57,6 @@ void DescriptorSet::Init(uint32_t descriptorSetCount)
 
 void DescriptorSet::Cleanup()
 {
-	vkDestroyDescriptorPool(Device::GetDevice(), s_DescriptorPool, nullptr);
 	vkDestroyPipelineLayout(Device::GetDevice(), m_PipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(Device::GetDevice(), m_DescriptorSetLayout, nullptr);
 }
@@ -103,7 +108,7 @@ void DescriptorSet::Create()
 
 	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
 	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	descriptorSetAllocateInfo.descriptorPool = s_DescriptorPool;
+	descriptorSetAllocateInfo.descriptorPool = DescriptorPool::Get();
 	descriptorSetAllocateInfo.descriptorSetCount = m_DescriptorSetCount;
 	descriptorSetAllocateInfo.pSetLayouts = setLayouts.data();
 
