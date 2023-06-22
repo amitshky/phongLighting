@@ -2,8 +2,10 @@
 
 #include <memory>
 #include <vector>
+
 #include <vulkan/vulkan.h>
 #include "imgui/backends/imgui_impl_vulkan.h"
+
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
 #include "renderer/commandPool.h"
@@ -16,7 +18,9 @@
 #include "renderer/texture.h"
 #include "renderer/pipeline.h"
 #include "renderer/camera.h"
+#include "renderer/model.h"
 #include "editor/ubo.h"
+#include "editor/objects.h"
 
 
 class Renderer
@@ -49,22 +53,17 @@ private:
 
 	std::unique_ptr<Swapchain> m_Swapchain{};
 
+	std::unique_ptr<Model> m_BackpackModel{};
+	std::unique_ptr<Model> m_CerberusModel{};
+	std::unique_ptr<Cube> m_Cube{};
+	std::unique_ptr<LightCube> m_LightCube{};
+
 	std::unique_ptr<VertexBuffer> m_VertexBuffer{};
 	std::unique_ptr<IndexBuffer> m_IndexBuffer{};
 
 	UniformBufferObject m_Ubo{};
 	DynamicUniformBufferObject m_DUbo{};
-	std::vector<UniformBuffer> m_UniformBuffers{};
-	std::vector<UniformBuffer> m_DynamicUniformBuffers{};
-	std::vector<Texture2D> m_Textures{};
-	std::unique_ptr<DescriptorSet> m_DescriptorSet{};
-
 	LightCubeUBO m_LightCubeUbo{};
-	std::vector<UniformBuffer> m_LightCubeUniformBuffers{};
-	std::unique_ptr<DescriptorSet> m_LightCubeDescriptorSet{};
-
-	std::unique_ptr<Pipeline> m_Pipeline{};
-	std::unique_ptr<Pipeline> m_LightCubePipeline{};
 
 	std::unique_ptr<CommandBuffer> m_CommandBuffer{};
 

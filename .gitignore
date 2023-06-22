@@ -68,3 +68,6 @@ build/
 !assets/**/*.obj
 
 imgui.ini
+
+# prebuilt binaries
+binaries/*

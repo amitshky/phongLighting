@@ -35,17 +35,10 @@ public:
 public:
 	~DynamicUniformBufferObject() { Cleanup(); }
 
-	void Init(uint64_t minAlignmentSize, const uint64_t numCubes)
+	void Init(const uint64_t minAlignmentSize, const uint64_t numInstances)
 	{
-		m_AlignmentSize = sizeof(glm::mat4) * 2; // size of model and normal matrices
-		if (minAlignmentSize > 0)
-		{
-			// returns value greater than `minAlignmentSize - 1` and greater or equal to `m_AlignmentSize`, and is a
-			// power of 2
-			m_AlignmentSize = (m_AlignmentSize + minAlignmentSize - 1) & ~(minAlignmentSize - 1);
-		}
-
-		m_Size = numCubes * m_AlignmentSize;
+		m_AlignmentSize = CalcAlignmentSize(minAlignmentSize);
+		m_Size = CalcBufferSize(numInstances, m_AlignmentSize);
 		buffer = static_cast<glm::mat4*>(_aligned_malloc(m_Size, m_AlignmentSize));
 	}
 
@@ -69,6 +62,24 @@ public:
 	{
 		return reinterpret_cast<glm::mat4*>(
 			reinterpret_cast<uint64_t>(buffer) + sizeof(glm::mat4) + (index * m_AlignmentSize));
+	}
+
+	static uint64_t CalcAlignmentSize(const uint64_t minAlignmentSize)
+	{
+		uint64_t alignmentSize = sizeof(glm::mat4) * 2; // size of model and normal matrices
+		if (minAlignmentSize > 0)
+		{
+			// returns value greater than `minAlignmentSize - 1` and greater or equal to `alignmentSize`, and is a
+			// power of 2
+			alignmentSize = (alignmentSize + minAlignmentSize - 1) & ~(minAlignmentSize - 1);
+		}
+
+		return alignmentSize;
+	}
+
+	static inline uint64_t CalcBufferSize(const uint64_t numInstances, const uint64_t alignmentSize)
+	{
+		return numInstances * alignmentSize;
 	}
 
 private:

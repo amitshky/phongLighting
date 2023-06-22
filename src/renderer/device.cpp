@@ -59,7 +59,7 @@ void Device::PickPhysicalDevice()
 
 	Logger::Info(
 		"Physical device info:\n"
-		"    Device name: {}\n",
+		"    Device name: {}",
 		m_PhysicalDeviceProperties.deviceName);
 }
 

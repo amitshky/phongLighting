@@ -8,6 +8,7 @@
 
 
 Texture2D::Texture2D(const char* texturePath)
+	: m_Path{ texturePath }
 {
 	CreateTextureImage(texturePath);
 	CreateTextureImageView();
@@ -33,6 +34,17 @@ std::vector<VkDescriptorImageInfo> Texture2D::GetImageInfos(const std::vector<Te
 
 	for (const auto& texture : textures)
 		imageInfos.push_back(texture.m_ImageInfo);
+
+	return imageInfos;
+}
+
+std::vector<VkDescriptorImageInfo> Texture2D::GetImageInfos(const std::vector<std::shared_ptr<Texture2D>>& textures)
+{
+	std::vector<VkDescriptorImageInfo> imageInfos{};
+	imageInfos.reserve(textures.size());
+
+	for (const auto& texture : textures)
+		imageInfos.push_back(texture->m_ImageInfo);
 
 	return imageInfos;
 }

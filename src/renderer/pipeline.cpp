@@ -64,7 +64,7 @@ void Pipeline::Init(const char* vertShaderPath,
 	rasterizationStateInfo.lineWidth = 1.0f;
 	rasterizationStateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 	// we specify counter clockwise because in the projection matrix we flipped the y-coord
-	rasterizationStateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizationStateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	// the depth value can be altered by adding a constant value based on fragment slope
 	rasterizationStateInfo.depthBiasEnable = VK_FALSE;
 	rasterizationStateInfo.depthBiasConstantFactor = 0.0f;
