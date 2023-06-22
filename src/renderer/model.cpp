@@ -213,7 +213,7 @@ void Model::LoadTextures(aiMaterial* material, aiTextureType type)
 	{
 		// fallback texture if the texture could not be loaded
 		const char* texPath = "assets/textures/checkerboard.png";
-		Logger::Info("    Fallback texture loaded: \"{}\"", texPath);
+		Logger::Warn("    Fallback texture loaded: \"{}\"", texPath);
 		m_LoadedTextures.push_back(std::make_shared<Texture2D>(texPath));
 		return;
 	}

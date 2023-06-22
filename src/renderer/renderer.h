@@ -42,6 +42,7 @@ private:
 
 	void CreateSyncObjects();
 	void UpdateUniformBuffers(uint32_t currentFrameIndex);
+	void OnUIRender(uint32_t fpsCount);
 
 private:
 	const VulkanConfig m_Config;
@@ -64,6 +65,20 @@ private:
 	UniformBufferObject m_Ubo{};
 	DynamicUniformBufferObject m_DUbo{};
 	LightCubeUBO m_LightCubeUbo{};
+
+	// uniform values to be displayed in the ui
+	glm::vec3 m_BackpackPos{ -1.0f, 0.0f, 0.0f };
+	float m_BackpackRotateX{ 0.0f };
+	float m_BackpackRotateY{ 0.0f };
+	float m_BackpackRotateZ{ 0.0f };
+	glm::vec3 m_CerberusPos{ 0.0f, 0.0f, 0.0f };
+	float m_CerberusRotateX{ -90.0f };
+	float m_CerberusRotateY{ 0.0f };
+	float m_CerberusRotateZ{ 180.0f };
+	glm::vec3 m_CubePos{ 1.0f, 0.0f, 0.0f };
+	float m_CubeRotateX{ 0.0f };
+	float m_CubeRotateY{ 0.0f };
+	float m_CubeRotateZ{ 0.0f };
 
 	std::unique_ptr<CommandBuffer> m_CommandBuffer{};
 

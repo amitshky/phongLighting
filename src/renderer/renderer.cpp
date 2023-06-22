@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "core/core.h"
 #include "utils/utils.h"
 #include "ui/imGuiOverlay.h"
@@ -94,14 +95,7 @@ void Renderer::Draw(float deltatime, uint32_t fpsCount)
 
 	UpdateUniformBuffers(m_CurrentFrameIndex);
 
-	ImGuiOverlay::Begin();
-
-	ImGui::Begin("Profiler");
-	ImGui::Text("%.2f ms/frame (%d fps)", (1000.0f / fpsCount), fpsCount);
-	ImGui::End();
-
-	ImGuiOverlay::End(m_ActiveCommandBuffer);
-
+	OnUIRender(fpsCount);
 	EndScene();
 
 	m_Camera->OnUpdate(deltatime);
@@ -123,7 +117,10 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 	uint32_t i = 0;
 	// get a pointer to the aligned offset
 	glm::mat4* modelMatPtr = m_DUbo.GetModelMatPtr(i);
-	*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
+	*modelMatPtr = glm::translate(glm::mat4(1.0f), m_BackpackPos);
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_BackpackRotateX), glm::vec3(1.0f, 0.0f, 0.0f));
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_BackpackRotateY), glm::vec3(0.0f, 1.0f, 0.0f));
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_BackpackRotateZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	*modelMatPtr = glm::scale(*modelMatPtr, glm::vec3(0.2f));
 	glm::mat4* normMatPtr = m_DUbo.GetNormalMatPtr(i);
 	*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
@@ -131,9 +128,10 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 	// cerberus model
 	i = 1;
 	modelMatPtr = m_DUbo.GetModelMatPtr(i);
-	*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	*modelMatPtr = glm::translate(glm::mat4(1.0f), m_CerberusPos);
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_CerberusRotateX), glm::vec3(1.0f, 0.0f, 0.0f));
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_CerberusRotateY), glm::vec3(0.0f, 1.0f, 0.0f));
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_CerberusRotateZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	*modelMatPtr = glm::scale(*modelMatPtr, glm::vec3(0.005f));
 	normMatPtr = m_DUbo.GetNormalMatPtr(i);
 	*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
@@ -141,7 +139,10 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 	// cube
 	i = 2;
 	modelMatPtr = m_DUbo.GetModelMatPtr(i);
-	*modelMatPtr = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	*modelMatPtr = glm::translate(glm::mat4(1.0f), m_CubePos);
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_CubeRotateX), glm::vec3(1.0f, 0.0f, 0.0f));
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_CubeRotateY), glm::vec3(0.0f, 1.0f, 0.0f));
+	*modelMatPtr = glm::rotate(*modelMatPtr, glm::radians(m_CubeRotateZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	*modelMatPtr = glm::scale(*modelMatPtr, glm::vec3(0.5f));
 	normMatPtr = m_DUbo.GetNormalMatPtr(i);
 	*normMatPtr = glm::inverseTranspose(*modelMatPtr); // 4x4 converted to 3x3 in the vertex shader
@@ -155,6 +156,69 @@ void Renderer::UpdateUniformBuffers(uint32_t currentFrameIndex)
 	m_LightCubeUbo.transformationMat = glm::translate(m_LightCubeUbo.transformationMat, lightPos);
 	m_LightCubeUbo.transformationMat = glm::scale(m_LightCubeUbo.transformationMat, glm::vec3(0.1f));
 	m_LightCube->UpdateUniformBuffers(m_LightCubeUbo, currentFrameIndex);
+}
+
+void Renderer::OnUIRender(uint32_t fpsCount)
+{
+	ImGuiOverlay::Begin();
+
+	ImGui::Begin("Profiler");
+	ImGui::Text("%.2f ms/frame (%d fps)", (1000.0f / fpsCount), fpsCount);
+	ImGui::End();
+
+	ImGui::Begin("Properties");
+
+	ImGui::SeparatorText("Backpack:");
+	ImGui::Text("Position:");
+	ImGui::SameLine();
+	ImGui::SliderFloat3("##backpack_position", glm::value_ptr(m_BackpackPos), -5.0f, 5.0f);
+	ImGui::Text("Rotate:");
+	ImGui::Text("X-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##backpack_x_axis", &m_BackpackRotateX, -180.0f, 180.0f);
+	ImGui::Text("Y-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##backpack_y_axis", &m_BackpackRotateY, -180.0f, 180.0f);
+	ImGui::Text("Z-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##backpack_z_axis", &m_BackpackRotateZ, -180.0f, 180.0f);
+	ImGui::Separator();
+
+	ImGui::SeparatorText("Cerberus:");
+	ImGui::Text("Position");
+	ImGui::SameLine();
+	ImGui::SliderFloat3("##cerberus_position", glm::value_ptr(m_CerberusPos), -5.0f, 5.0f);
+	ImGui::Text("Rotate:");
+	ImGui::Text("X-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##cerberus_x_axis", &m_CerberusRotateX, -180.0f, 180.0f);
+	ImGui::Text("Y-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##cerberus_y_axis", &m_CerberusRotateY, -180.0f, 180.0f);
+	ImGui::Text("Z-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##cerberus_z_axis", &m_CerberusRotateZ, -180.0f, 180.0f);
+	ImGui::Separator();
+
+	ImGui::SeparatorText("Cube:");
+	ImGui::Text("Position");
+	ImGui::SameLine();
+	ImGui::SliderFloat3("##cube_position", glm::value_ptr(m_CubePos), -5.0f, 5.0f);
+	ImGui::Text("Rotate:");
+	ImGui::Text("X-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##cube_x_axis", &m_CubeRotateX, -180.0f, 180.0f);
+	ImGui::Text("Y-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##cube_y_axis", &m_CubeRotateY, -180.0f, 180.0f);
+	ImGui::Text("Z-axis:");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##cube_z_axis", &m_CubeRotateZ, -180.0f, 180.0f);
+	ImGui::Separator();
+
+	ImGui::End();
+
+	ImGuiOverlay::End(m_ActiveCommandBuffer);
 }
 
 void Renderer::OnResize(int /*unused*/, int /*unused*/)
