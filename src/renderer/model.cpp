@@ -209,6 +209,15 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 void Model::LoadTextures(aiMaterial* material, aiTextureType type)
 {
 	uint32_t textureCount = material->GetTextureCount(type);
+	if (textureCount == 0)
+	{
+		// fallback texture if the texture could not be loaded
+		const char* texPath = "assets/textures/checkerboard.png";
+		Logger::Info("    Fallback texture loaded: \"{}\"", texPath);
+		m_LoadedTextures.push_back(std::make_shared<Texture2D>(texPath));
+		return;
+	}
+
 	for (uint32_t i = 0; i < textureCount; ++i)
 	{
 		aiString filename;
@@ -230,7 +239,7 @@ void Model::LoadTextures(aiMaterial* material, aiTextureType type)
 		if (!skip)
 		{
 			m_LoadedTextures.push_back(std::make_shared<Texture2D>(texturePath.c_str()));
-			Logger::Info("Loaded texture: \"{}\"", texturePath.c_str());
+			Logger::Info("    Loaded texture: \"{}\"", texturePath.c_str());
 		}
 	}
 }
