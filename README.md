@@ -1,7 +1,7 @@
 # phongLighting
-A simple Blinn-Phong lighting implementation.
+A simple Blinn-Phong lighting implementation in Vulkan.
 
-<video src='img/vid.mkv' width=550/>
+https://github.com/amitshky/phongLighting/img/vid.mov
 
 
 ## Prerequisites
