@@ -43,7 +43,7 @@ OR (using bat scripts from `scripts` folder)
 
 
 ## Screenshots
-<img src="img/phongLighting.png" width=550>
+<img src="img/phonglighting.png" width=550>
 
 
 ## References
