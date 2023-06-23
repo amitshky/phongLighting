@@ -46,6 +46,11 @@ OR (using bat scripts from `scripts` folder)
 <img src="img/phonglighting.png" width=550>
 
 
+* checkout `0c62a96cf88554043d43ffb24e03ed8f914e08fe`
+
+<img src="img/diffTextures.png" width=550>
+
+
 ## References
 * [Vulkan tutorial](https://vulkan-tutorial.com/)
 * [learnopengl.com](https://learnopengl.com/)
