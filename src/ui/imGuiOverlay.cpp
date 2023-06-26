@@ -5,7 +5,8 @@
 #include "renderer/vulkanContext.h"
 #include "renderer/device.h"
 #include "renderer/descriptor.h"
-
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
 
 void ImGuiOverlay::Init(uint32_t imageCount, VkRenderPass renderPass)
 {

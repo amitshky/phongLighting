@@ -74,7 +74,6 @@ target_include_directories(
 	"lib/"
 	"lib/glm/"
 	"lib/glfw/include/"
-	"lib/fmt/include/"
 	"lib/spdlog/include/"
 	"lib/imgui/"
 	"lib/assimp/include/"
