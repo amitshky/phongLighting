@@ -59,9 +59,6 @@ private:
 	std::unique_ptr<Cube> m_Cube{};
 	std::unique_ptr<LightCube> m_LightCube{};
 
-	std::unique_ptr<VertexBuffer> m_VertexBuffer{};
-	std::unique_ptr<IndexBuffer> m_IndexBuffer{};
-
 	UniformBufferObject m_Ubo{};
 	DynamicUniformBufferObject m_DUbo{};
 	LightCubeUBO m_LightCubeUbo{};
