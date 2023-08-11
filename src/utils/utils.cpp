@@ -18,7 +18,7 @@ std::pair<std::vector<uint32_t>, std::vector<Vertex>> GetModelData(const std::ve
 	{
 		if (vertexLookup.count(vertex) == 0)
 		{
-			vertexLookup[vertex] = static_cast<uint32_t>(i);
+			vertexLookup[vertex] = i;
 			uniqueVertices.push_back(vertex);
 			++i;
 		}
