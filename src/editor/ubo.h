@@ -25,7 +25,8 @@ public:
 	// they are aligned one after another in the memory
 	// the buffer is allocated using `_aligned_malloc`
 	// each of the alignments are bound one at a time
-	// so only one model and normal matrix is sent to the shader
+	// so only one model and one normal matrix is sent to the shader
+	// and in the shader the struct has members for model and normal
 	// eg if alignment is 256bytes (and sizeof(glm::mat4) = 64bytes):
 	// |---model-1---|---normal-1--|-------------|-------------|
 	// |---model-2---|---normal-2--|-------------|-------------|
