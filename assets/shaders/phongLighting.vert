@@ -26,7 +26,8 @@ layout(location = 4) out vec3 outLightPos;
 
 void main()
 {
-	gl_Position = ubo.viewProjMat * dUbo.modelMat * vec4(inPosition, 1.0);
+	outFragPos = vec3(dUbo.modelMat * vec4(inPosition, 1.0));
+	gl_Position = ubo.viewProjMat * vec4(outFragPos, 1.0);
 
 	// we cannot simply multiply the normal vector by the model matrix,
 	// because we shouldnt translate the normal vector
@@ -34,7 +35,6 @@ void main()
 	outNormal = mat3(dUbo.normMat) * inNormal;
 
 	outTexCoord = inTexCoord;
-	outFragPos = vec3(dUbo.modelMat * vec4(inPosition, 1.0));
 	outViewPos = ubo.viewPos;
 	outLightPos = ubo.lightPos;
 }
