@@ -14,8 +14,8 @@ constexpr glm::vec3 g_Target = glm::vec3(0.0f, 0.0f, 0.0f);
 constexpr float g_Yaw = -90.0f;
 constexpr float g_Pitch = 0.0f;
 constexpr float g_FOVy = glm::radians(45.0f);
-constexpr float g_ZNear = 0.1f;
-constexpr float g_ZFar = 50.0f;
+constexpr float g_ZNear = 0.01f;
+constexpr float g_ZFar = 100.0f;
 
 
 Camera::Camera(float aspectRatio)

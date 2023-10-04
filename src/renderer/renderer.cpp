@@ -171,6 +171,8 @@ void Renderer::OnUIRender(uint32_t fpsCount)
 	ImGui::SeparatorText("Backpack:");
 	ImGui::Text("Position:");
 	ImGui::SameLine();
+	// `##` in the label is for id of the label
+	// `Name###ID`
 	ImGui::SliderFloat3("##backpack_position", glm::value_ptr(m_BackpackPos), -5.0f, 5.0f);
 	ImGui::Text("Rotate:");
 	ImGui::Text("X-axis:");
